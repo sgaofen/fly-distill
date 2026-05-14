@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "distilled_gene_v1.1",
+  "title": "Distilled fly gene profile (v1.1)",
+  "description": "Per-gene canonical record produced by the GLM-based distillation pipeline. v1.1 adds: structured evidence citations, disease IDs (OMIM/HPO), GO terms, tissue/life-stage/allele tags, specificity score, full synonyms.",
+  "type": "object",
+  "required": [
+    "schema_version", "fbgn", "symbol", "snapshot",
+    "bullets", "cross_species", "go", "source"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.1" },
+    "fbgn": { "type": "string", "pattern": "^FBgn[0-9]{7}$" },
+    "symbol": { "type": "string", "minLength": 1 },
+    "synonyms": {
+      "type": "array",
+      "description": "All known names for this gene — symbol, FBgn secondary IDs, CG numbers, historical names, full names. Built from FlyBase fbgn_annotation_ID.tsv.",
+      "items": { "type": "string" }
+    },
+    "distilled_at": { "type": "string", "format": "date-time" },
+    "model": { "type": "string" },
+    "source": {
+      "type": "object",
+      "required": ["flybase_release", "n_pubs_total", "n_abstracts_used"],
+      "properties": {
+        "flybase_release": { "type": "string" },
+        "n_pubs_total": { "type": "integer", "minimum": 0 },
+        "n_abstracts_used": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": ["integer", "null"] },
+        "output_tokens": { "type": ["integer", "null"] }
+      }
+    },
+    "snapshot": { "type": "string" },
+    "bullets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "phenotype", "direction", "evidence_text", "citations"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^FBgn[0-9]{7}:b[0-9]+$" },
+          "category": {
+            "type": "string",
+            "enum": [
+              "behavior", "morphology", "lifespan_aging", "development",
+              "reproduction", "metabolism", "immune", "sensory_neural",
+              "stress_response", "disease_model", "expression_pattern", "other"
+            ]
+          },
+          "phenotype": { "type": "string", "minLength": 5 },
+          "direction": {
+            "type": "string",
+            "enum": ["loss_of_function", "gain_of_function", "either", "unknown"]
+          },
+          "evidence_text": {
+            "type": "string",
+            "description": "Free-text evidence string as the model produced it. Preserved verbatim."
+          },
+          "citations": {
+            "type": "array",
+            "description": "Structured citation tokens parsed from evidence_text. Every citation has a unified shape: {type, value, [extras]}. The SQLite ingester writes (cite_type, cite_value) directly from (type, value) — no per-type field guessing.",
+            "items": {
+              "type": "object",
+              "required": ["type", "value"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["fbrf", "flybase_section", "go", "ortholog"]
+                },
+                "value": {
+                  "type": "string",
+                  "description": "Canonical identifier: FBrf####### | section_name | GO term | species:symbol"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Human-readable display string (optional)."
+                },
+                "quote": {
+                  "type": ["string", "null"],
+                  "description": "Verbatim short excerpt supporting this claim (optional)."
+                },
+                "species": { "type": ["string", "null"], "enum": ["human", "mouse", null] },
+                "section_enum": {
+                  "type": ["string", "null"],
+                  "description": "When type='flybase_section', the section name (mirrors value).",
+                  "enum": [
+                    "phenotypes_sub", "alleles_main_sub", "hdm_sub",
+                    "other_comments_sub", "summary_genetic_interactions_sub",
+                    "summary_physical_interactions_sub", "pathways_sub",
+                    "gene_class_sub", "human_orthologs_sub", "mod_orthologs_sub",
+                    "function", "auto_summary", null
+                  ]
+                }
+              }
+            }
+          },
+          "confidence": {
+            "type": ["string", "null"],
+            "description": "Claim-level confidence assigned by the LLM. Required field (always present); explicit null means the canonicalizer filled it after the model omitted it (recorded in _lint as schema_drift.missing_confidence). NOT a substitute for curated evidence strength — see GPT review item #10.",
+            "enum": ["high", "medium", "low", null]
+          },
+          "text_specificity": {
+            "type": ["string", "null"],
+            "description": "Surface textual specificity heuristic. Counts numbers, named entities, quantifiers, sentence length. Renamed from 'specificity' to avoid conflation with biological evidence quality (GPT review item #9).",
+            "enum": ["high", "medium", "low", null]
+          },
+          "tissues": {
+            "type": "array",
+            "description": "Anatomical / tissue tags parsed from FlyBase phenotype pipe-format (e.g. 'Malpighian tubule', 'wing', 'mushroom body').",
+            "items": { "type": "string" }
+          },
+          "life_stages": {
+            "type": "array",
+            "description": "Life-stage tags parsed from same source (embryonic / larval / pupal / adult, etc.).",
+            "items": { "type": "string" }
+          },
+          "alleles": {
+            "type": "array",
+            "description": "FlyBase allele names mentioned in evidence (e.g. 'per01', 'shi^ts1', 'w1118').",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "go": {
+      "type": "object",
+      "description": "GO term annotations carried verbatim from FlyBase GO ribbons for this gene.",
+      "required": ["biological_process", "molecular_function", "cellular_component"],
+      "properties": {
+        "biological_process": { "type": "array", "items": { "type": "string" } },
+        "molecular_function": { "type": "array", "items": { "type": "string" } },
+        "cellular_component": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "cross_species": {
+      "type": "object",
+      "required": ["human_orthologs", "mouse_orthologs", "human_disease_links", "mouse_phenotype_links"],
+      "properties": {
+        "human_orthologs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["symbol", "entrez_id", "diopt_score", "diopt_max"],
+            "properties": {
+              "symbol": { "type": "string" },
+              "entrez_id": { "type": "string" },
+              "diopt_score": { "type": "integer" },
+              "diopt_max": { "type": "integer" },
+              "name": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "mouse_orthologs": {
+          "type": "array",
+          "items": { "$ref": "#/properties/cross_species/properties/human_orthologs/items" }
+        },
+        "human_disease_links": {
+          "type": "array",
+          "description": "Disease entries with stable IDs when extractable from FlyBase dmel_human_orthologs_disease bulk.",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "omim_id": { "type": ["string", "null"], "description": "MIM number when available, e.g. '604348'." },
+              "do_id":   { "type": ["string", "null"], "description": "Disease Ontology ID, e.g. 'DOID:0050735'." },
+              "source": { "type": "string", "description": "Which source attested the link — 'flybase_hdm' / 'llm_inferred' / 'alliance' / 'ortholog_mygene'." }
+            }
+          }
+        },
+        "mouse_phenotype_links": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "notes": { "type": ["string", "null"] },
+    "_lint": {
+      "type": "array",
+      "description": "Structured non-fatal quality warnings. Each entry is an object so programmatic filtering / counting is possible (e.g. 'find all genes with code=schema_drift.missing_confidence').",
+      "items": {
+        "type": "object",
+        "required": ["code", "severity", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable identifier, dotted. Examples: schema_drift.missing_confidence, citation.parse_failure, evidence.too_short, retry.applied"
+          },
+          "severity": { "type": "string", "enum": ["info", "warn", "error"] },
+          "message": { "type": "string" },
+          "path": { "type": ["string", "null"], "description": "JSONPath into this gene record where the issue applies (optional)." },
+          "stage": { "type": ["string", "null"], "enum": ["fetch", "distill", "canonicalize", "validate", "index", null] },
+          "n_affected": { "type": ["integer", "null"], "description": "How many bullets/items were affected." }
+        }
+      }
+    }
+  }
+}

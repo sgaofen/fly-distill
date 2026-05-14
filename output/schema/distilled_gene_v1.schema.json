@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "distilled_gene_v1",
+  "title": "Distilled fly gene profile",
+  "type": "object",
+  "required": ["schema_version", "fbgn", "symbol", "snapshot", "bullets", "cross_species", "source"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "fbgn": { "type": "string", "pattern": "^FBgn[0-9]{7}$" },
+    "symbol": { "type": "string", "minLength": 1 },
+    "synonyms": { "type": "array", "items": { "type": "string" } },
+    "distilled_at": { "type": "string", "format": "date-time" },
+    "model": { "type": "string" },
+    "source": {
+      "type": "object",
+      "required": ["flybase_release", "n_pubs_total", "n_abstracts_used"],
+      "properties": {
+        "flybase_release": { "type": "string" },
+        "n_pubs_total": { "type": "integer", "minimum": 0 },
+        "n_abstracts_used": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": ["integer", "null"] },
+        "output_tokens": { "type": ["integer", "null"] }
+      }
+    },
+    "snapshot": { "type": "string" },
+    "bullets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "phenotype", "direction", "evidence"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^FBgn[0-9]{7}:b[0-9]+$" },
+          "category": {
+            "type": "string",
+            "enum": [
+              "behavior", "morphology", "lifespan_aging", "development",
+              "reproduction", "metabolism", "immune", "sensory_neural",
+              "stress_response", "disease_model", "expression_pattern", "other"
+            ]
+          },
+          "phenotype": { "type": "string", "minLength": 5 },
+          "direction": {
+            "type": "string",
+            "enum": ["loss_of_function", "gain_of_function", "either", "unknown"]
+          },
+          "evidence": { "type": "string", "minLength": 1 },
+          "confidence": {
+            "type": ["string", "null"],
+            "enum": ["high", "medium", "low", null]
+          }
+        }
+      }
+    },
+    "cross_species": {
+      "type": "object",
+      "required": ["human_orthologs", "mouse_orthologs", "human_disease_links", "mouse_phenotype_links"],
+      "properties": {
+        "human_orthologs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["symbol", "entrez_id", "diopt_score", "diopt_max"],
+            "properties": {
+              "symbol": { "type": "string" },
+              "entrez_id": { "type": "string" },
+              "diopt_score": { "type": "integer" },
+              "diopt_max": { "type": "integer" },
+              "name": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "mouse_orthologs": {
+          "type": "array",
+          "items": { "$ref": "#/properties/cross_species/properties/human_orthologs/items" }
+        },
+        "human_disease_links": { "type": "array", "items": { "type": "string" } },
+        "mouse_phenotype_links": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "notes": { "type": ["string", "null"] },
+    "_lint": {
+      "type": "array",
+      "description": "Non-fatal schema drift / quality warnings recorded at validation time.",
+      "items": { "type": "string" }
+    }
+  }
+}

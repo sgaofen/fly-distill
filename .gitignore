@@ -1,0 +1,61 @@
+# Secrets — NEVER commit
+.env
+.env.*
+!.env.example
+
+# Bulk databases (regeneratable via download scripts)
+data/flybase_bulk/
+data/mgi/
+data/hpo/
+data/omim/
+data/alliance/
+data/cache/
+data/mouse_human_manifest.json
+
+# Generated outputs (regeneratable via pipeline)
+output/FBgn*/
+output/genes/*.json
+output/index/*.sqlite
+output/index/*.jsonl
+output/index/by_*.json
+output/index/catalog.jsonl
+output/index/bullets_flat.jsonl
+output/index/bullets.jsonl
+output/index/lint_summary.json
+output/qa/tier1_report.jsonl
+output/qa/tier1_summary.md
+output/qa/tier2_audit_results.jsonl
+output/qa/tier2_audit_sample.jsonl
+output/qa/tier2_run_log.txt
+output/qa/tier2_opus_audit.jsonl
+output/qa/prompt_experiment*.json
+output/qa/prompt_experiment_log.txt
+output/qa/monitor*.jsonl
+output/concurrency_probe.json
+output/concurrency_log.txt
+output/demo_run.txt
+output/batch_log.txt
+output/batch_summary.json
+output/report_for_long.md
+output/spot_checks.json
+runs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
+
+# Temp
+*.tmp
+/tmp/fb_*
+audit_summary.json

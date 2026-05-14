@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "distilled_gene_v1.2",
+  "title": "Distilled fly gene profile (v1.2)",
+  "description": "Per-gene canonical record. v1.2 adds (vs v1.1.1): typed synonyms, model as object, provenance hashes, go renamed to go_slim, disease.via_ortholog field, structured _lint.",
+  "type": "object",
+  "required": [
+    "schema_version", "fbgn", "symbol", "snapshot",
+    "bullets", "cross_species", "go_slim", "source", "provenance"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.2" },
+    "fbgn": { "type": "string", "pattern": "^FBgn[0-9]{7}$" },
+    "symbol": { "type": "string", "minLength": 1 },
+    "synonyms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["synonym", "type"],
+        "properties": {
+          "synonym": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "current_symbol", "annotation_id",
+              "secondary_fbgn", "secondary_annotation_id", "unknown"
+            ]
+          },
+          "is_current": { "type": "boolean" }
+        }
+      }
+    },
+    "distilled_at": { "type": "string", "format": "date-time" },
+    "model": {
+      "type": "object",
+      "required": ["provider", "model_id"],
+      "properties": {
+        "provider": { "type": "string" },
+        "model_id": { "type": "string" },
+        "harness": { "type": ["string", "null"] }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["flybase_release", "n_pubs_total", "n_abstracts_used"],
+      "properties": {
+        "flybase_release": { "type": "string" },
+        "n_pubs_total": { "type": "integer", "minimum": 0 },
+        "n_abstracts_used": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": ["integer", "null"] },
+        "output_tokens": { "type": ["integer", "null"] }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["bundle_sha256", "raw_llm_output_sha256", "prompt_sha256"],
+      "properties": {
+        "bundle_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "raw_llm_output_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "prompt_sha256": { "type": "string" },
+        "pipeline_git_commit": { "type": "string" },
+        "canonicalized_at": { "type": "string" }
+      }
+    },
+    "snapshot": { "type": "string" },
+    "bullets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "phenotype", "direction", "evidence_text", "citations"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^FBgn[0-9]{7}:b[0-9]+$" },
+          "category": {
+            "type": "string",
+            "enum": [
+              "behavior", "morphology", "lifespan_aging", "development",
+              "reproduction", "metabolism", "immune", "sensory_neural",
+              "stress_response", "disease_model", "expression_pattern", "other"
+            ]
+          },
+          "phenotype": { "type": "string", "minLength": 5 },
+          "direction": {
+            "type": "string",
+            "enum": ["loss_of_function", "gain_of_function", "either", "unknown"]
+          },
+          "evidence_text": { "type": "string", "minLength": 1 },
+          "citations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "value"],
+              "properties": {
+                "type": { "enum": ["fbrf", "flybase_section", "go", "ortholog"] },
+                "value": { "type": "string" },
+                "label": { "type": "string" },
+                "quote": { "type": ["string", "null"] },
+                "species": { "type": ["string", "null"], "enum": ["human", "mouse", null] },
+                "section_enum": { "type": ["string", "null"] }
+              }
+            }
+          },
+          "confidence": { "type": ["string", "null"], "enum": ["high", "medium", "low", null] },
+          "text_specificity": { "type": ["string", "null"], "enum": ["high", "medium", "low", null] },
+          "tissues": { "type": "array", "items": { "type": "string" } },
+          "life_stages": { "type": "array", "items": { "type": "string" } },
+          "alleles": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "go_slim": {
+      "type": "object",
+      "description": "GO slim categories from FlyBase ribbon. NOT full GO IDs — for that see future go_full field once gene_ontology.tsv is parsed.",
+      "required": ["biological_process", "molecular_function", "cellular_component"],
+      "properties": {
+        "biological_process": { "type": "array", "items": { "type": "string" } },
+        "molecular_function": { "type": "array", "items": { "type": "string" } },
+        "cellular_component": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "cross_species": {
+      "type": "object",
+      "required": ["human_orthologs", "mouse_orthologs", "human_disease_links", "mouse_phenotype_links"],
+      "properties": {
+        "human_orthologs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["symbol", "entrez_id", "diopt_score", "diopt_max"],
+            "properties": {
+              "symbol": { "type": "string" },
+              "entrez_id": { "type": "string" },
+              "diopt_score": { "type": "integer" },
+              "diopt_max": { "type": "integer" },
+              "name": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "mouse_orthologs": { "$ref": "#/properties/cross_species/properties/human_orthologs" },
+        "human_disease_links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "omim_id": { "type": ["string", "null"] },
+              "do_id": { "type": ["string", "null"] },
+              "source": { "type": "string" },
+              "via_ortholog": {
+                "type": ["object", "null"],
+                "properties": {
+                  "species": { "enum": ["human", "mouse"] },
+                  "symbol": { "type": ["string", "null"] },
+                  "diopt_score": { "type": ["integer", "null"] }
+                }
+              }
+            }
+          }
+        },
+        "mouse_phenotype_links": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "notes": { "type": ["string", "null"] },
+    "_lint": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "severity", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "severity": { "enum": ["info", "warn", "error"] },
+          "message": { "type": "string" },
+          "path": { "type": ["string", "null"] },
+          "stage": { "type": ["string", "null"] },
+          "n_affected": { "type": ["integer", "null"] }
+        }
+      }
+    }
+  }
+}
