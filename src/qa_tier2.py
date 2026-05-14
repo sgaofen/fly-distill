@@ -161,11 +161,42 @@ def audit_one(fbgn: str, model: str = "glm-5.1") -> dict:
         return {"fbgn": fbgn, "error": f"missing: {e}"}
     prompt = build_audit_prompt(gene, bundle)
     in_chars = len(prompt)
+
+    # Production-grade rate limiting: audit calls also live in the z.ai quota pool
+    # (when model is glm-*). Use the shared budget so distill + audit don't blow past
+    # the 10-concurrent ceiling, and auto-pause on quota exhaustion.
+    sys_path = str(Path(__file__).resolve().parents[1] / "src")
+    if sys_path not in sys.path:
+        sys.path.insert(0, sys_path)
+    from rate_limiter import budget, is_rate_limit_response, is_quota_exhausted_response
+    bd = budget()
+    # weight: Claude Code harness costs 3 slots (1 main + up to 2 sub-agents)
+    weight = bd.harness_weight if model.startswith("glm-") else 1
+
     t0 = time.time()
-    wrapper = call_auditor(prompt, model=model)
+    max_attempts = 4
+    wrapper = None
+    for attempt in range(1, max_attempts + 1):
+        with bd.acquire(weight=weight, label=f"audit:{fbgn}"):
+            wrapper = call_auditor(prompt, model=model)
+        err_body = wrapper.get("error", "") if wrapper else ""
+        if not err_body:
+            break
+        # detect rate-limit / quota signals; if so, report + retry
+        http_code = ""
+        if is_quota_exhausted_response(http_code, err_body):
+            print(f"  [audit {fbgn}] quota-exhausted signal — pausing then retry {attempt}/{max_attempts}", flush=True)
+            bd.report_quota_exhausted()
+        elif is_rate_limit_response(http_code, err_body):
+            print(f"  [audit {fbgn}] rate-limit signal — backing off then retry {attempt}/{max_attempts}", flush=True)
+            bd.report_429()
+        else:
+            # non-rate-limit error; give up after this attempt
+            break
     dt = time.time() - t0
     if "error" in wrapper:
-        return {"fbgn": fbgn, "error": wrapper["error"], "elapsed_s": dt}
+        return {"fbgn": fbgn, "error": wrapper["error"], "elapsed_s": dt,
+                "attempts": max_attempts}
     text = wrapper.get("result", "")
     try:
         audit = json.loads(strip_fences(text))

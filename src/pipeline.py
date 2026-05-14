@@ -54,11 +54,14 @@ def shard_for(fbgn: str) -> str:
 
 
 def out_path(fbgn: str) -> Path:
-    return ROOT / "output" / "genes" / shard_for(fbgn) / f"{fbgn}.json"
+    # Canonical JSON lives at the flat path (matches canonicalize.py); for sharded
+    # 14k+ deployments, switch to: ROOT/"output"/"genes"/shard_for(fbgn)/f"{fbgn}.json"
+    return ROOT / "output" / "genes" / f"{fbgn}.json"
 
 
 def bundle_path(fbgn: str) -> Path:
-    return ROOT / "data" / "cache" / shard_for(fbgn) / fbgn / "bundle.json"
+    # Bundle currently flat too. Switch to sharded once 14k+ files justify it.
+    return ROOT / "data" / "cache" / fbgn / "bundle.json"
 
 
 def atomic_write(path: Path, content: str):
