@@ -54,7 +54,10 @@ def _intenv(name: str, default: int) -> int:
 class ConcurrencyBudget:
     max_concurrent: int = field(default_factory=lambda: _intenv("ZAI_MAX_CONCURRENT", 10))
     reserve: int = field(default_factory=lambda: _intenv("ZAI_RESERVE_SLOTS", 2))
-    harness_weight: int = field(default_factory=lambda: _intenv("ZAI_HARNESS_WEIGHT", 3))
+    # Default weight=1 for our distillation task — pure JSON-completion, no tool use,
+    # no sub-agent fan-out. Set to 2-3 only if your prompt asks the model to use tools
+    # which can spawn sub-agents.
+    harness_weight: int = field(default_factory=lambda: _intenv("ZAI_HARNESS_WEIGHT", 1))
     recovery_interval_s: int = field(default_factory=lambda: _intenv("ZAI_RECOVERY_INTERVAL_S", 60))
     # Quota-exhaustion (5h window full): pause all workers for this long before checking again.
     quota_wait_s: int = field(default_factory=lambda: _intenv("ZAI_QUOTA_WAIT_S", 300))   # 5 min poll
@@ -120,6 +123,9 @@ class ConcurrencyBudget:
                     remaining = self._quota_exhausted_until - now
                     self._waiter_cond.wait(timeout=min(30, remaining))
                     continue
+                # Time-of-day floor: if we've crossed into a higher-cap window,
+                # snap cap back up. This is the auto-unlock after Beijing peak.
+                self._enforce_time_floor_locked()
                 # Conditions 2 + 3: slots available
                 self._try_recover_locked()
                 if self._slots_available >= weight:
@@ -135,18 +141,45 @@ class ConcurrencyBudget:
                 self._slots_in_use -= weight
                 self._waiter_cond.notify_all()
 
+    def _min_cap_now(self) -> int:
+        """Time-of-day floor for effective_cap. Beijing 14:00-18:00 is z.ai's
+        documented service-overload window — allow cap to drop all the way to 1
+        during that 4h slot. Outside it, guarantee a higher floor so a brief
+        429 burst doesn't strand us at cap=1 for the rest of the day."""
+        # Beijing = UTC+8 (stable, ignores US DST oscillation)
+        hour_beijing = (int(time.time() // 3600) + 8) % 24
+        if 14 <= hour_beijing < 18:
+            return 1
+        # Light shoulder (Beijing 18-21 / 11-14) — model some lingering load
+        if 18 <= hour_beijing < 21 or 11 <= hour_beijing < 14:
+            return 3
+        # Full off-peak — guarantee real concurrency
+        return 5
+
+    def _enforce_time_floor_locked(self):
+        """Called under lock. If wall-clock has moved into a higher-floor
+        window and effective_cap is below it, snap cap up. This is the
+        programmatic 'peak ended, open up GLM' fallback."""
+        floor = self._min_cap_now()
+        if self._effective_cap < floor:
+            delta = floor - self._effective_cap
+            self._effective_cap = floor
+            self._slots_available += delta
+            self._waiter_cond.notify_all()
+
     def report_429(self):
-        """Pull effective_cap down by 1 (down to 1 minimum). If 429 rate within window
-        crosses the quota_exhausted threshold, trip into quota-exhausted mode that
-        suspends ALL workers for quota_wait_s before next attempt."""
+        """Pull effective_cap down by 1 (no lower than _min_cap_now()). If 429
+        rate within window crosses the quota_exhausted threshold, trip into
+        quota-exhausted mode that suspends ALL workers for quota_wait_s."""
         with self._waiter_cond:
             now = time.time()
             self._recent_429s.append(now)
             self._recent_429s = [t for t in self._recent_429s if t > now - self.quota_exhausted_window_s]
 
-            # mild backoff
+            # mild backoff — but respect time-of-day floor
+            floor = self._min_cap_now()
             old_cap = self._effective_cap
-            self._effective_cap = max(1, self._effective_cap - 1)
+            self._effective_cap = max(floor, self._effective_cap - 1)
             delta = old_cap - self._effective_cap
             self._slots_available = max(0, self._slots_available - delta)
             self._last_recovery_attempt = now
@@ -170,11 +203,31 @@ class ConcurrencyBudget:
             self._quota_pause_count += 1
             self._waiter_cond.notify_all()
 
+    # Track consecutive successes for active recovery (every N → +1 cap)
+    _success_streak: int = 0
+    _success_recover_threshold: int = field(
+        default_factory=lambda: _intenv("ZAI_SUCCESS_RECOVER_THRESHOLD", 3))
+
     def report_success(self):
-        """Recorded for adaptive recovery. Doesn't grow cap by itself — that's done
-        on a timer to avoid oscillation."""
-        # no-op for now; recovery is timer-driven, not success-driven
-        pass
+        """Active recovery: every N consecutive successes within last 30s of clean
+        operation (no 429s) bumps effective_cap by 1. This pulls us out of the
+        cap=1 trap that the timer-only recovery leaves us in when peak-hour bursts
+        over-shrink. Without this, recovery requires NO acquire activity for 60s
+        which never happens when we're saturating the (low) cap."""
+        with self._waiter_cond:
+            now = time.time()
+            # any 429 in last 30s resets streak — we want truly clean window
+            if any(t > now - 30 for t in self._recent_429s):
+                self._success_streak = 0
+                return
+            self._success_streak += 1
+            if self._success_streak >= self._success_recover_threshold:
+                if self._effective_cap < self._initial_cap:
+                    self._effective_cap += 1
+                    self._slots_available += 1
+                    self._last_recovery_attempt = now
+                    self._waiter_cond.notify_all()
+                self._success_streak = 0
 
     def _try_recover_locked(self):
         """If we've been throttled below initial cap AND no 429s in last recovery_interval,
@@ -205,13 +258,30 @@ def is_rate_limit_response(http_code: str, body_text: str = "") -> bool:
 
 
 def is_quota_exhausted_response(http_code: str, body_text: str = "") -> bool:
-    """Hard quota exhaustion (vs transient rate-limit): error code 1113 'Insufficient balance',
-    or message text containing quota / subscription / balance keywords."""
+    """Hard quota exhaustion (vs transient rate-limit). Recognizes:
+       - Z.ai code 1113 ('Insufficient balance')
+       - Anthropic Max plan limit messages
+       - OpenAI/Codex ChatGPT subscription limits
+    Triggers rate_limiter to pause ALL workers for quota_wait_s before next call."""
     low = (body_text or "").lower()
     if "\"code\":\"1113\"" in body_text:
         return True
-    for kw in ("insufficient balance", "quota exhausted", "subscription benefits may be restricted",
-               "recharge", "exceeded daily", "exceeded 5-hour"):
+    for kw in (
+        # Z.ai / GLM
+        "insufficient balance", "quota exhausted", "subscription benefits may be restricted",
+        "recharge", "exceeded daily", "exceeded 5-hour",
+        # Anthropic Max
+        "you have exceeded your usage", "exceeded your daily limit",
+        "exceeded the maximum number of tokens",
+        # OpenAI / ChatGPT-Codex (observed 2026-05-14): "You've hit your usage limit.
+        # Visit https://chatgpt.com/codex/settings/usage to purchase more credits or
+        # try again at HH:MM."
+        "you have reached your usage limit", "you exceeded your current quota",
+        "rate_limit_exceeded", "insufficient_quota",
+        "usage_limit_reached", "you have hit your message limit",
+        "you've hit your usage limit", "hit your usage limit",
+        "purchase more credits", "chatgpt.com/codex/settings/usage",
+    ):
         if kw in low:
             return True
     return False

@@ -29,6 +29,7 @@ import json
 import os
 import queue
 import signal
+import subprocess
 import sys
 import threading
 import time
@@ -40,9 +41,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 # Tunables ---------------------------------------------------------
-FETCH_WORKERS = 12          # I/O-bound, can comfortably outrun GLM
-GLM_WORKERS   = 10          # GLM Coding Plan: 10-concurrent ceiling (single plan)
-QUEUE_CAP     = 30          # bundles waiting for GLM; caps memory at ~1.5 MB
+# As of v2 we no longer hit FlyBase API/HTML — everything is bulk-TSV in memory
+# plus NCBI eutils (separate infrastructure, 10 req/s with email). PubMed fetcher
+# self-throttles globally at ~3 req/s. MyGene (Scripps) tolerates burst well.
+FETCH_WORKERS = int(os.environ.get("PIPELINE_FETCH_WORKERS", "6"))
+GLM_WORKERS   = int(os.environ.get("PIPELINE_GLM_WORKERS", "10"))   # per-pipeline concurrency
+QUEUE_CAP     = int(os.environ.get("PIPELINE_QUEUE_CAP", "30"))
 RETRY_ATTEMPTS = 3
 # ------------------------------------------------------------------
 
@@ -86,21 +90,28 @@ def append_jsonl(path: Path, record: dict):
 # ---- Stages -----------------------------------------------------
 
 def fetch_one(fbgn: str) -> dict:
-    """Build the per-gene bundle. Currently delegates to fetch_gene.build_bundle which uses
-    APIs; in the bulk-TSV refactor this becomes a local parse + abstract sub-fetch."""
-    from fetch_gene import build_bundle
-    cache = ROOT / "data" / "cache" / shard_for(fbgn) / fbgn
+    """Build the per-gene bundle via bulk-only fetcher (fetch_gene_v2).
+    Source: in-memory BulkIndex (17 FlyBase TSVs + Alliance) + NCBI eutils
+    abstracts + MyGene ortholog summaries. No FlyBase API/HTML calls."""
+    from fetch_gene_v2 import build_bundle
+    cache = ROOT / "data" / "cache" / fbgn
     return build_bundle(fbgn, cache)
 
 
 def distill_one(fbgn: str, bundle: dict, harness: str = "claude") -> tuple[dict, dict]:
-    """Returns (raw_response_obj, meta)."""
+    """Returns (raw_response_obj, meta). On subprocess timeout, returns
+    (None, {error_type: 'timeout', ...}) instead of raising — distill_with_retry
+    inspects error_type and decides whether to shrink+retry."""
     if harness == "direct":
         from distill import call_glm, build_input_message, extract_text, strip_fences
         system = (ROOT / "prompts" / "distill_system.md").read_text()
         user = build_input_message(bundle)
         t0 = time.time()
-        resp = call_glm(system, user)
+        try:
+            resp = call_glm(system, user)
+        except Exception as e:
+            return None, {"elapsed_s": time.time() - t0, "harness": "direct",
+                          "error_type": "exception", "error": str(e)[:200]}
         dt = time.time() - t0
         text = extract_text(resp)
         try:
@@ -109,13 +120,55 @@ def distill_one(fbgn: str, bundle: dict, harness: str = "claude") -> tuple[dict,
             parsed = None
         return parsed, {"elapsed_s": dt, "usage": resp.get("usage", {}), "harness": "direct"}
     else:
-        from distill_via_claude import (call_claude_headless, build_user_prompt,
-                                          strip_fences, next_key)
+        # harness "claude" → GLM-5.1 via z.ai
+        # harness "sonnet" → Claude Opus/Sonnet via Anthropic Max OAuth
+        # harness "codex"  → OpenAI Codex CLI via ChatGPT sub
+        # harness "glm5"   → GLM-5 via z.ai (different model, concurrency=2)
+        if harness == "sonnet":
+            from distill_via_sonnet import (call_claude_headless, build_user_prompt,
+                                              strip_fences, next_key)
+        elif harness == "codex":
+            from distill_via_codex import (call_claude_headless, build_user_prompt,
+                                              strip_fences, next_key)
+        elif harness == "glm5":
+            from distill_via_glm5 import (call_claude_headless, build_user_prompt,
+                                            strip_fences, next_key)
+        else:
+            from distill_via_claude import (call_claude_headless, build_user_prompt,
+                                              strip_fences, next_key)
         prompt = build_user_prompt(bundle)
         api_key = next_key()
         t0 = time.time()
-        wrapper = call_claude_headless(prompt, api_key)
+        try:
+            wrapper = call_claude_headless(prompt, api_key)
+        except subprocess.TimeoutExpired as e:
+            return None, {"elapsed_s": time.time() - t0, "harness": "claude_code_headless",
+                          "error_type": "timeout",
+                          "timeout_s": getattr(e, "timeout", None),
+                          "prompt_chars": len(prompt)}
+        except Exception as e:
+            es = str(e)
+            return None, {"elapsed_s": time.time() - t0, "harness": "claude_code_headless",
+                          "error_type": "exception", "error": es[:300],
+                          "error_body": es[:2000], "http_code": ""}
         dt = time.time() - t0
+        # claude --print wraps z.ai errors as: {is_error:true, api_error_status:NNN,
+        # result:"API Error: ..."} with exit code 1. distill_via_claude now returns
+        # this wrapper instead of raising — surface the signal to rate_limiter via
+        # http_code + error_body so 429/quota trip the right backoff path.
+        if wrapper.get("is_error"):
+            http_code = str(wrapper.get("api_error_status", "") or "")
+            result_text = wrapper.get("result", "") or ""
+            error_text = wrapper.get("error_text", "") or ""
+            # combine — codex puts quota-exhaust message in error_text, not result
+            combined = (result_text + "\n" + error_text).strip()
+            return None, {"elapsed_s": dt, "usage": wrapper.get("usage", {}),
+                          "harness": "claude_code_headless",
+                          "error_type": "api_error",
+                          "error": combined[:300],
+                          "error_body": combined,
+                          "http_code": http_code,
+                          "wrapper_cost_usd": wrapper.get("total_cost_usd")}
         text = wrapper.get("result", "")
         try:
             parsed = json.loads(strip_fences(text))
@@ -152,29 +205,118 @@ def has_schema_drift(canonical: dict) -> bool:
     return False
 
 
-def distill_with_retry(fbgn: str, bundle: dict, harness: str, run_log: Path, max_attempts: int = 2):
-    """Try distill; if canonical has schema_drift, retry once with stricter prompt."""
+def shrink_bundle(bundle: dict, level: int) -> dict:
+    """Return a copy of `bundle` with reduced content for timeout retries.
+    Aim: reduce prompt size so GLM can finish before subprocess timeout.
+
+    level 1: halve abstracts (20→10) + halve phenotype/allele line counts
+    level 2+: aggressive cap (5 abstracts, 30 phenotype/allele rows, drop low-priority sections)"""
+    import copy as _copy
+    out = _copy.deepcopy(bundle)
+    if level <= 0:
+        return out
+    if level == 1:
+        out["abstracts"] = out.get("abstracts", [])[:10]
+        for sid in ("phenotypes_sub", "alleles_main_sub"):
+            txt = (out.get("sections") or {}).get(sid, "") or ""
+            lines = txt.split("\n")
+            out["sections"][sid] = "\n".join(lines[:max(40, len(lines) // 2)])
+    else:
+        out["abstracts"] = out.get("abstracts", [])[:5]
+        for sid in ("phenotypes_sub", "alleles_main_sub",
+                    "summary_genetic_interactions_sub", "summary_physical_interactions_sub"):
+            txt = (out.get("sections") or {}).get(sid, "") or ""
+            lines = txt.split("\n")
+            out["sections"][sid] = "\n".join(lines[:30])
+    out["_shrink_level"] = level
+    return out
+
+
+def distill_with_retry(fbgn: str, bundle: dict, harness: str, run_log: Path, max_attempts: int = 3):
+    """Try distill with three escalation paths:
+       1. On schema_drift -> retry once with stricter prompt (same bundle).
+       2. On subprocess timeout -> shrink bundle (refs+phenotypes), retry.
+       3. On 'no JSON' -> retry with strict prompt + same bundle.
+
+    Total up to max_attempts attempts; final attempt always uses shrunk bundle and
+    strict prompt as a 'kitchen sink' last try. After all attempts, returns whatever
+    we have (or None if every attempt threw an error)."""
+    from rate_limiter import budget, is_rate_limit_response, is_quota_exhausted_response
+    bd = budget()
+    canonical = raw = meta = None
+    cur_bundle = bundle
+    shrink_level = 0
     for attempt in range(1, max_attempts + 1):
+        # Pick prompt: strict on retries (drift or no-json), regular on first try
         prompt_path = (ROOT / "prompts" /
                        ("distill_system_strict.md" if attempt > 1 else "distill_system.md"))
-        # The distill_one functions read the prompt file by name — we swap it via env
         os.environ["DISTILL_PROMPT_FILE"] = prompt_path.name
-        raw, meta = distill_one(fbgn, bundle, harness)
+        raw, meta = distill_one(fbgn, cur_bundle, harness)
+
+        # Eagerly feed rate-limit signals to the global budget every attempt — otherwise
+        # a successful 3rd attempt would mask 429s on attempts 1+2 and we'd never trip
+        # the backoff. This is critical during peak hours.
+        err_body = (meta or {}).get("error_body", "")
+        http_code = (meta or {}).get("http_code", "")
+        if is_quota_exhausted_response(http_code, err_body):
+            bd.report_quota_exhausted()
+            # Hard quota → don't burn the remaining 2 attempts. Mark deferred so
+            # glm_worker can route to deferred.jsonl (not quarantine). The next
+            # idempotent pipeline run picks the gene up after quota resets.
+            if meta is not None:
+                meta["error_type"] = "quota_deferred"
+            return None, None, meta, attempt
+        elif is_rate_limit_response(http_code, err_body):
+            bd.report_429()
+
+        err_type = (meta or {}).get("error_type")
+        if err_type == "api_error":
+            # Log structured api_error so we can see 429 rate over time
+            append_jsonl(run_log / "failures.jsonl", {
+                "ts": now(), "fbgn": fbgn, "stage": "api_error",
+                "attempt": attempt, "http_code": http_code,
+                "error": (meta or {}).get("error", ""),
+                "retrying": attempt < max_attempts,
+            })
+            continue
+        if err_type == "timeout":
+            # subprocess hit timeout → shrink bundle for next try
+            shrink_level += 1
+            append_jsonl(run_log / "failures.jsonl", {
+                "ts": now(), "fbgn": fbgn, "stage": "timeout",
+                "attempt": attempt, "elapsed_s": meta.get("elapsed_s"),
+                "prompt_chars": meta.get("prompt_chars"),
+                "next_shrink_level": shrink_level,
+                "retrying": attempt < max_attempts,
+            })
+            cur_bundle = shrink_bundle(bundle, shrink_level)
+            continue
+        if err_type == "exception":
+            append_jsonl(run_log / "failures.jsonl", {
+                "ts": now(), "fbgn": fbgn, "stage": "distill_exception",
+                "attempt": attempt, "error": meta.get("error"),
+                "retrying": attempt < max_attempts,
+            })
+            continue
         if not raw or "bullets" not in raw:
             append_jsonl(run_log / "failures.jsonl", {
                 "ts": now(), "fbgn": fbgn, "stage": "distill",
                 "attempt": attempt, "error": "no valid JSON",
+                "retrying": attempt < max_attempts,
             })
             continue
-        canonical = canonicalize_record(fbgn, raw, bundle, meta)
+        canonical = canonicalize_record(fbgn, raw, cur_bundle, meta)
         if not has_schema_drift(canonical):
+            if meta is not None and shrink_level > 0:
+                meta["recovered_via_shrink_level"] = shrink_level
             return canonical, raw, meta, attempt
         append_jsonl(run_log / "failures.jsonl", {
             "ts": now(), "fbgn": fbgn, "stage": "schema_drift",
             "attempt": attempt, "lint": canonical.get("_lint"),
             "retrying": attempt < max_attempts,
         })
-    # final canonical (with drift) — still write it but flagged
+    # All attempts exhausted. Return whatever we have (may be None) — caller decides
+    # whether to write a (possibly drifted) record or quarantine.
     return canonical, raw, meta, max_attempts
 
 
@@ -215,7 +357,7 @@ def glm_worker(in_q: queue.Queue, write_q: queue.Queue, run_log: Path, harness: 
             # This is what prevents sub-agent fan-out from blowing past z.ai's hard 10-cap.
             with bd.acquire(weight=call_weight, label=fbgn):
                 canonical, raw, meta, attempts = distill_with_retry(
-                    fbgn, bundle, harness, run_log, max_attempts=2
+                    fbgn, bundle, harness, run_log, max_attempts=3
                 )
                 # detect rate-limit / quota-exhaustion signals
                 err = meta.get("error_body", "") if meta else ""
@@ -227,24 +369,47 @@ def glm_worker(in_q: queue.Queue, write_q: queue.Queue, run_log: Path, harness: 
                     bd.report_429()
                 else:
                     bd.report_success()
-            ok = canonical is not None and canonical.get("bullets")
+            # A canonical with empty bullets is a LEGITIMATE success for stub genes
+            # (uncharacterized CG-prefix predicted genes with 0 phenotype data). The
+            # model correctly returned `{"bullets": []}` — don't quarantine it.
+            ok = canonical is not None and isinstance(canonical.get("bullets"), list)
             append_jsonl(run_log / "glm_calls.jsonl", {
                 "ts": now(), "fbgn": fbgn,
                 "attempts": attempts,
-                "input_tokens": meta.get("usage", {}).get("input_tokens"),
-                "output_tokens": meta.get("usage", {}).get("output_tokens"),
-                "elapsed_s": round(meta.get("elapsed_s", 0), 2),
-                "harness": meta.get("harness"),
+                "input_tokens": (meta.get("usage", {}) if meta else {}).get("input_tokens"),
+                "output_tokens": (meta.get("usage", {}) if meta else {}).get("output_tokens"),
+                "elapsed_s": round((meta or {}).get("elapsed_s", 0), 2),
+                "harness": (meta or {}).get("harness"),
+                "shrink_recovered": (meta or {}).get("recovered_via_shrink_level"),
                 "weight": call_weight,
                 "budget_state": bd.state,
                 "drift_after_retry": has_schema_drift(canonical) if canonical else None,
                 "ok": ok,
             })
             if not ok:
-                append_jsonl(run_log / "failures.jsonl", {
-                    "ts": now(), "fbgn": fbgn, "stage": "distill",
-                    "error": "no valid JSON parsed from GLM response after retry",
-                })
+                err_type = (meta or {}).get("error_type")
+                # Quota-deferred → don't quarantine. Gene stays unprocessed and the
+                # next idempotent run picks it up after the quota resets.
+                if err_type == "quota_deferred":
+                    append_jsonl(run_log / "deferred.jsonl", {
+                        "ts": now(), "fbgn": fbgn, "reason": "quota_exhausted",
+                        "attempts": attempts,
+                    })
+                else:
+                    append_jsonl(run_log / "quarantine.jsonl", {
+                        "ts": now(), "fbgn": fbgn,
+                        "reason": err_type or "no_valid_json",
+                        "attempts": attempts,
+                        "last_elapsed_s": (meta or {}).get("elapsed_s"),
+                        "last_prompt_chars": (meta or {}).get("prompt_chars"),
+                        "last_error": (meta or {}).get("error"),
+                    })
+                    append_jsonl(run_log / "failures.jsonl", {
+                        "ts": now(), "fbgn": fbgn, "stage": "exhausted_retries",
+                        "attempts": attempts,
+                        "error_type": err_type,
+                        "error": (meta or {}).get("error"),
+                    })
                 continue
             write_q.put((fbgn, raw, bundle, meta, canonical))
         except Exception as e:
@@ -311,6 +476,12 @@ def run(gene_list: list, harness: str, batch_id: str):
         print("nothing to do")
         return
 
+    # Pre-warm the FlyBase bulk index BEFORE spawning fetcher threads — otherwise
+    # all 6 threads race the lazy-init and spike RAM with duplicate ~500 MB instances.
+    print("pre-warming bulk index...", flush=True)
+    from bulk_index import get_bulk
+    get_bulk()
+
     in_q = queue.Queue()
     bundle_q = queue.Queue(maxsize=QUEUE_CAP)
     write_q = queue.Queue(maxsize=QUEUE_CAP)
@@ -358,7 +529,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("gene_list_file", nargs="?",
                     help="path to file with one FBgn per line")
-    ap.add_argument("--harness", choices=["direct", "claude"], default="claude",
+    ap.add_argument("--harness", choices=["direct", "claude", "sonnet", "codex", "glm5"], default="claude",
                     help="direct API or Claude Code headless")
     ap.add_argument("--batch-id", default=None)
     ap.add_argument("--dry-run", action="store_true")

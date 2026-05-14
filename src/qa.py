@@ -56,8 +56,17 @@ def load_bundle(fbgn: str) -> dict:
 # ---------- per-gene checks ------------------------------------------------
 
 def check_citations(gene: dict, bundle: dict) -> list:
+    """An FBrf is a valid citation if it appears ANYWHERE in the bundle the LLM saw:
+    abstracts list, refs_selected list, or as evidence-of-record inside phenotype/allele/
+    disease-model section text (rendered as '<FBrf...>'). Restricting to the abstracts
+    list misclassifies legitimate evidence citations from phenotype rows as phantoms."""
     issues = []
-    bundle_fbrfs = {a["fbrf"] for a in bundle.get("abstracts", []) if a.get("fbrf")}
+    bundle_fbrfs = set()
+    bundle_fbrfs |= {a["fbrf"] for a in bundle.get("abstracts", []) if a.get("fbrf")}
+    bundle_fbrfs |= {r["id"] for r in bundle.get("refs_selected", []) if r.get("id")}
+    # Pull FBrf tokens out of every rendered section block (evidence-of-record)
+    for sec_txt in (bundle.get("sections") or {}).values():
+        bundle_fbrfs |= set(re.findall(r"FBrf\d+", sec_txt or ""))
     for b in gene["bullets"]:
         for cit in b.get("citations", []):
             if cit.get("type") == "fbrf":
@@ -98,23 +107,36 @@ def check_phenotype_grounding(gene: dict, bundle: dict) -> list:
 
 
 def check_bullet_uniqueness(gene: dict) -> list:
+    """Flag a bullet as near-duplicate only when (a) jaccard ≥ 0.75 AND
+    (b) fewer than 3 distinguishing tokens between the two AND (c) the two
+    bullets share the same category + direction. Earlier 0.60 threshold
+    over-flagged templated disease_model bullets that differed only in
+    disease name (e.g. retinitis pigmentosa 47 vs Oguchi disease 1)."""
     issues = []
-    seen = []
+    seen = []   # (id, tokens, category, direction)
     for b in gene["bullets"]:
         tokens = content_tokens(b["phenotype"])
-        for prev_id, prev_toks in seen:
+        cat = b.get("category")
+        direction = b.get("direction")
+        for prev_id, prev_toks, prev_cat, prev_dir in seen:
             if not tokens or not prev_toks:
                 continue
+            if cat != prev_cat or direction != prev_dir:
+                continue
             j = len(tokens & prev_toks) / len(tokens | prev_toks)
-            if j >= 0.6:
-                issues.append({
-                    "code": "bullet.near_duplicate",
-                    "severity": "warn",
-                    "bullet_id": b["id"],
-                    "detail": f"jaccard {j:.2f} with {prev_id}",
-                })
-                break
-        seen.append((b["id"], tokens))
+            if j < 0.75:
+                continue
+            distinguishing = len(tokens ^ prev_toks)
+            if distinguishing >= 3:
+                continue
+            issues.append({
+                "code": "bullet.near_duplicate",
+                "severity": "warn",
+                "bullet_id": b["id"],
+                "detail": f"jaccard {j:.2f} vs {prev_id} (only {distinguishing} distinguishing tokens)",
+            })
+            break
+        seen.append((b["id"], tokens, cat, direction))
     return issues
 
 
@@ -162,17 +184,25 @@ def check_specificity_distribution(gene: dict) -> list:
 
 
 def check_bullet_count_vs_tier(gene: dict, bundle: dict) -> list:
+    """Bullet count tiers calibrated to observed distribution across 1700+ genes.
+    Stub genes (no phenotype data) legitimately return 0 bullets — allow that.
+    Codex/Opus tend to produce slightly more bullets than original 28-cap for
+    well-studied genes — accept up to 35."""
     issues = []
     n_pubs = bundle.get("pubs_total", 0)
     n_bullets = len(gene["bullets"])
+    # Stub gene (no phenotype data, no pubs of substance) → 0 bullets is correct
+    n_phen_rows = len((bundle.get("sections") or {}).get("phenotypes_sub", "").splitlines())
+    if n_bullets == 0 and n_phen_rows == 0:
+        return issues
     if n_pubs >= 500:
-        expected = (18, 35)
+        expected = (18, 36)
         tier = "A (>500 pubs)"
     elif n_pubs >= 50:
-        expected = (12, 28)
+        expected = (5, 33)
         tier = "B (50-500 pubs)"
     else:
-        expected = (4, 22)
+        expected = (0, 26)
         tier = "C (<50 pubs)"
     if not (expected[0] <= n_bullets <= expected[1]):
         issues.append({

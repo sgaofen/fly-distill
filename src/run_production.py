@@ -108,7 +108,7 @@ def supervise(name: str, cmd: list, max_restarts: int = 50, log_path: Path = Non
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("gene_list_file", nargs="?")
-    ap.add_argument("--harness", choices=["direct", "claude"], default="claude")
+    ap.add_argument("--harness", choices=["direct", "claude", "sonnet"], default="claude")
     ap.add_argument("--batch-id", default=None)
     ap.add_argument("--check", action="store_true", help="show status only")
     ap.add_argument("--monitor-only", action="store_true",

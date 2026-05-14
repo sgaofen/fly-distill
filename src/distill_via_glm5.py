@@ -36,7 +36,8 @@ def load_env() -> dict:
 
 ENV = load_env()
 BASE_URL = ENV.get("ZAI_BASE_URL", "https://api.z.ai/api/anthropic")
-MODEL = ENV.get("ZAI_MODEL", "glm-5.1")
+# GLM-5 (older, but still strong). z.ai documents concurrency=2 for this model.
+MODEL = ENV.get("ZAI_GLM5_MODEL", "glm-5")
 KEYS = [k.strip() for k in ENV.get("ZAI_API_KEYS", ENV.get("ZAI_API_KEY", "")).split(",") if k.strip()]
 if not KEYS:
     sys.exit("Need ZAI_API_KEY or ZAI_API_KEYS in .env")

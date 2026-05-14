@@ -29,7 +29,10 @@ USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
 # Caps for prototype scale — keeps payload bounded & polite to FlyBase
 MAX_REFS = 20             # pull abstracts for top-N most-recent representative refs
 MAX_ORTHO_PER_SPECIES = 3 # fetch deep data for top N orthologs per species (human, mouse)
-RATE_DELAY_S = 0.4        # FlyBase asks ≤3 req/s; we stay well below
+# RATE_DELAY_S applies per-fetcher; with N fetcher workers running concurrently the
+# COLLECTIVE rate is N / RATE_DELAY_S. FlyBase asks ≤3 req/s globally. With 2 workers
+# at 1.5s delay = 1.3 req/s collective, well below WAF threshold.
+RATE_DELAY_S = 1.5
 
 
 def get(url: str, timeout: int = 30, retries: int = 5, min_bytes: int = 1) -> bytes:
