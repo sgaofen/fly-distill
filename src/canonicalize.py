@@ -74,6 +74,54 @@ def canonicalize_one(fbgn: str) -> dict:
     raw = json.loads(raw_path.read_text())
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
 
+    # FBrf → paper-metadata lookup: title/year/pmid/doi/miniref for citation enrichment.
+    # Layered: bundle.refs_selected + bundle.abstracts (rich, with title) → bulk_index
+    # (global FlyBase fbrf_pmid_pmcid_doi.tsv) as fallback for FBrfs the LLM cited but
+    # weren't selected into this gene's top-20 abstract slice.
+    fbrf_meta: dict = {}
+    bulk_fbrf = _bulk_fbrf_lookup()
+    for ref in bundle.get("refs_selected", []):
+        fid = ref.get("id")
+        if not fid:
+            continue
+        fbrf_meta[fid] = {
+            "year": ref.get("year"),
+            "miniref": ref.get("miniref"),
+            "pmid": ref.get("pmid"),
+            "doi": ref.get("doi"),
+            "type": ref.get("type"),
+        }
+    for ab in bundle.get("abstracts", []):
+        fid = ab.get("fbrf")
+        if not fid:
+            continue
+        m = fbrf_meta.setdefault(fid, {})
+        if ab.get("title"):
+            m["title"] = ab.get("title")
+        for k in ("year", "miniref", "pmid"):
+            if not m.get(k) and ab.get(k):
+                m[k] = ab[k]
+
+    def _meta_for(fid: str) -> dict:
+        m = dict(fbrf_meta.get(fid, {}))
+        bm = bulk_fbrf.get(fid, {})
+        for k in ("year", "miniref", "pmid", "doi"):
+            if not m.get(k) and bm.get(k):
+                m[k] = bm[k]
+        return m
+
+    def _enrich_citations(cits: list) -> list:
+        out = []
+        for c in cits:
+            cc = dict(c)
+            if cc.get("type") == "fbrf":
+                m = _meta_for(cc.get("value"))
+                for k in ("year", "miniref", "pmid", "doi", "title"):
+                    if m.get(k) is not None:
+                        cc[k] = m[k]
+            out.append(cc)
+        return out
+
     lint = []
     bullets_out = []
     n_missing_confidence = 0
@@ -133,7 +181,7 @@ def canonicalize_one(fbgn: str) -> dict:
                 "stage": "canonicalize",
             })
 
-        citations = parse_citations(ev_text)
+        citations = _enrich_citations(parse_citations(ev_text))
 
         bullets_out.append({
             "id": bullet_id,
@@ -169,28 +217,29 @@ def canonicalize_one(fbgn: str) -> dict:
         })
 
     # cross-species: orthologs from bundle, diseases enriched with OMIM IDs + via_ortholog
+    # Dedup by (symbol, entrez_id): bundle pulls from two sources (Alliance + flybase
+    # disease-orthologs), often producing duplicate rows for the same ortholog.
+    def _dedup_orthologs(arr):
+        seen = set()
+        out = []
+        for o in arr:
+            key = (o.get("symbol"), str(o.get("entrez_id")))
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append({
+                "symbol": o.get("symbol"),
+                "entrez_id": o.get("entrez_id"),
+                "diopt_score": o.get("diopt_score"),
+                "diopt_max": o.get("diopt_max"),
+                "name": o.get("name"),
+            })
+        return out
+
     cs_raw = raw.get("cross_species") or {}
     cross_species = {
-        "human_orthologs": [
-            {
-                "symbol": o.get("symbol"),
-                "entrez_id": o.get("entrez_id"),
-                "diopt_score": o.get("diopt_score"),
-                "diopt_max": o.get("diopt_max"),
-                "name": o.get("name"),
-            }
-            for o in bundle.get("human_ortholog_data", [])
-        ],
-        "mouse_orthologs": [
-            {
-                "symbol": o.get("symbol"),
-                "entrez_id": o.get("entrez_id"),
-                "diopt_score": o.get("diopt_score"),
-                "diopt_max": o.get("diopt_max"),
-                "name": o.get("name"),
-            }
-            for o in bundle.get("mouse_ortholog_data", [])
-        ],
+        "human_orthologs": _dedup_orthologs(bundle.get("human_ortholog_data", [])),
+        "mouse_orthologs": _dedup_orthologs(bundle.get("mouse_ortholog_data", [])),
         "human_disease_links": disease_links_with_ortholog(
             fbgn, cs_raw.get("human_disease") or []
         ),
@@ -200,6 +249,19 @@ def canonicalize_one(fbgn: str) -> dict:
     # typed synonyms (v1.2)
     syns = synonyms_typed_for(fbgn, fallback_symbol=raw.get("symbol") or fbgn)
 
+    # Surface quality-affecting recovery in _lint so QA + downstream can spot
+    # outputs that were saved by shrinking the bundle (lost abstracts + phenotype rows)
+    shrink_lv = meta.get("recovered_via_shrink_level")
+    if shrink_lv:
+        lint.append({
+            "code": "quality.bundle_shrunk",
+            "severity": "warn",
+            "message": f"distill recovered via shrink_level={shrink_lv}; bundle had fewer abstracts/phenotype rows than full input — consider re-distilling for max quality",
+            "path": "$",
+            "stage": "distill_retry",
+            "shrink_level": shrink_lv,
+        })
+
     out = {
         "schema_version": SCHEMA_VERSION,
         "fbgn": fbgn,
@@ -207,9 +269,9 @@ def canonicalize_one(fbgn: str) -> dict:
         "synonyms": syns,
         "distilled_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "model": {
-            "provider": "z.ai",
+            "provider": meta.get("provider") or "z.ai",
             "model_id": meta.get("model") or "glm-5.1",
-            "harness": meta.get("harness") or "direct_api",
+            "harness": meta.get("pipeline_harness") or meta.get("harness") or "direct_api",
         },
         "source": {
             "flybase_release": "FB2026_01",
@@ -227,12 +289,69 @@ def canonicalize_one(fbgn: str) -> dict:
         },
         "snapshot": (raw.get("summary") or "").strip(),
         "bullets": bullets_out,
+        "references": _build_references(bullets_out, fbrf_meta, bulk_fbrf),
         "go_slim": extract_go(bundle),
         "cross_species": cross_species,
         "notes": (raw.get("notes") or "").strip() or None,
         "_lint": lint,
     }
     return out
+
+
+_BULK_FBRF_CACHE = None
+
+
+def _bulk_fbrf_lookup() -> dict:
+    """Lazy-load FlyBase global FBrf→{miniref, year, doi, pmid, pub_type} from
+    bulk_index. Cached at module level so 8000+ canonicalize calls don't re-parse
+    the TSV. Returns empty dict if bulk_index unavailable."""
+    global _BULK_FBRF_CACHE
+    if _BULK_FBRF_CACHE is not None:
+        return _BULK_FBRF_CACHE
+    try:
+        from bulk_index import get_bulk
+        b = get_bulk()
+        cache = {}
+        for fid, meta in b.fbrf_meta.items():
+            m = dict(meta)
+            m["pmid"] = b.fbrf_to_pmid.get(fid) or None
+            cache[fid] = m
+        _BULK_FBRF_CACHE = cache
+    except Exception as e:
+        print(f"  WARN: bulk_index unavailable for citation enrichment: {e}", flush=True)
+        _BULK_FBRF_CACHE = {}
+    return _BULK_FBRF_CACHE
+
+
+def _build_references(bullets_out: list, fbrf_meta: dict, bulk_fbrf: dict) -> list:
+    cited: dict = {}
+    for b in bullets_out:
+        for c in b.get("citations", []):
+            if c.get("type") == "fbrf":
+                fid = c.get("value")
+                if fid and fid not in cited:
+                    cited[fid] = c
+    refs = []
+    for fid in sorted(cited.keys()):
+        m = dict(fbrf_meta.get(fid, {}))
+        bm = bulk_fbrf.get(fid, {})
+        for k in ("year", "miniref", "pmid", "doi"):
+            if not m.get(k) and bm.get(k):
+                m[k] = bm[k]
+        pmid = m.get("pmid")
+        doi = m.get("doi")
+        refs.append({
+            "fbrf": fid,
+            "title": m.get("title"),
+            "miniref": m.get("miniref"),
+            "year": m.get("year"),
+            "pmid": pmid,
+            "doi": doi,
+            "pubmed_url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else None,
+            "doi_url": f"https://doi.org/{doi}" if doi else None,
+            "flybase_url": f"https://flybase.org/reports/{fid}",
+        })
+    return refs
 
 
 def write_one(fbgn: str) -> dict:

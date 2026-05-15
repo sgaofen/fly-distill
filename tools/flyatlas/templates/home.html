@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-8">
+  <section>
+    <h1 class="text-2xl font-semibold mb-2">Drosophila phenotype atlas</h1>
+    <p class="text-stone-600 text-sm leading-relaxed max-w-3xl">
+      {{ "{:,}".format(stats.n_genes) }} fly genes, distilled from FlyBase into structured
+      phenotype bullets with verbatim source citations. Every bullet links back to a
+      FBrf / PubMed / DOI; every cross-species claim is grounded in DIOPT orthology and
+      FlyBase-curated OMIM links.
+    </p>
+  </section>
+
+  <section class="grid grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded border border-stone-200">
+      <div class="text-xs uppercase text-stone-500">genes</div>
+      <div class="text-2xl font-semibold num">{{ "{:,}".format(stats.n_genes) }}</div>
+    </div>
+    <div class="bg-white p-4 rounded border border-stone-200">
+      <div class="text-xs uppercase text-stone-500">bullets</div>
+      <div class="text-2xl font-semibold num">{{ "{:,}".format(stats.n_bullets) }}</div>
+    </div>
+    <div class="bg-white p-4 rounded border border-stone-200">
+      <div class="text-xs uppercase text-stone-500">references</div>
+      <div class="text-2xl font-semibold num">{{ "{:,}".format(stats.n_refs) }}</div>
+    </div>
+    <div class="bg-white p-4 rounded border border-stone-200">
+      <div class="text-xs uppercase text-stone-500">OMIM diseases</div>
+      <div class="text-2xl font-semibold num">{{ "{:,}".format(stats.n_diseases) }}</div>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-3 gap-6">
+    <div>
+      <h2 class="text-sm font-semibold mb-2 text-stone-700">Browse by phenotype category</h2>
+      <ul class="text-sm space-y-1">
+        {% for cat, n in stats.by_category.items() %}
+          <li>
+            <a href="/browse/category/{{ cat }}" class="text-blue-700 hover:underline">{{ cat }}</a>
+            <span class="text-stone-500 num"> · {{ n }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-sm font-semibold mb-2 text-stone-700">Browse by tissue</h2>
+      <ul class="text-sm space-y-1">
+        {% for tissue, n in stats.top_tissues %}
+          <li>
+            <a href="/browse/tissue/{{ tissue }}" class="text-blue-700 hover:underline">{{ tissue }}</a>
+            <span class="text-stone-500 num"> · {{ n }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-sm font-semibold mb-2 text-stone-700">Backend distribution</h2>
+      <ul class="text-sm space-y-1">
+        {% for k, n in stats.by_provider.items() %}
+          <li><span class="text-stone-700">{{ k or '?' }}</span>
+            <span class="text-stone-500 num"> · {{ n }}</span></li>
+        {% endfor %}
+      </ul>
+      <h2 class="text-sm font-semibold mt-4 mb-2 text-stone-700">Confidence</h2>
+      <ul class="text-sm space-y-1">
+        {% for k, n in stats.by_confidence.items() %}
+          <li><span class="conf-{{ k }}">{{ k or '?' }}</span>
+            <span class="text-stone-500 num"> · {{ n }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="text-sm text-stone-600 leading-relaxed border-t border-stone-200 pt-6 space-y-2">
+    <p><strong>Getting started:</strong></p>
+    <ol class="list-decimal ml-6 space-y-1">
+      <li>Search a gene symbol or FBgn above (try <code>chico</code> or <code>FBgn0024248</code>)</li>
+      <li>Use boolean queries: <code>eye AND lethal</code>, <code>"Z disc" AND muscle</code></li>
+      <li>Browse by category, tissue, or paper from the lists on the left</li>
+      <li>Disease lookup: <a href="/browse/disease/254100" class="text-blue-700 hover:underline">/browse/disease/254100</a> (MDRP / muscular dystrophy)</li>
+      <li>Ortholog lookup: <a href="/browse/ortholog/IRS1" class="text-blue-700 hover:underline">/browse/ortholog/IRS1</a></li>
+    </ol>
+  </section>
+</div>
+{% endblock %}

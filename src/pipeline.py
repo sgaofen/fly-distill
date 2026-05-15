@@ -124,6 +124,7 @@ def distill_one(fbgn: str, bundle: dict, harness: str = "claude") -> tuple[dict,
         # harness "sonnet" → Claude Opus/Sonnet via Anthropic Max OAuth
         # harness "codex"  → OpenAI Codex CLI via ChatGPT sub
         # harness "glm5"   → GLM-5 via z.ai (different model, concurrency=2)
+        # harness "mimo"   → Xiaomi MiMo-V2.5-Pro via Token Plan (no throttling)
         if harness == "sonnet":
             from distill_via_sonnet import (call_claude_headless, build_user_prompt,
                                               strip_fences, next_key)
@@ -133,6 +134,12 @@ def distill_one(fbgn: str, bundle: dict, harness: str = "claude") -> tuple[dict,
         elif harness == "glm5":
             from distill_via_glm5 import (call_claude_headless, build_user_prompt,
                                             strip_fences, next_key)
+        elif harness == "mimo":
+            from distill_via_mimo import (call_claude_headless, build_user_prompt,
+                                            strip_fences, next_key)
+        elif harness == "gemini":
+            from distill_via_gemini import (call_claude_headless, build_user_prompt,
+                                              strip_fences, next_key)
         else:
             from distill_via_claude import (call_claude_headless, build_user_prompt,
                                               strip_fences, next_key)
@@ -179,17 +186,35 @@ def distill_one(fbgn: str, bundle: dict, harness: str = "claude") -> tuple[dict,
                         "wrapper_cost_usd": wrapper.get("total_cost_usd")}
 
 
-def canonicalize_record(fbgn: str, raw: dict, bundle: dict, meta: dict) -> dict:
-    """Convert raw GLM bullets into canonical schema (lifted from canonicalize.py)."""
+_HARNESS_MODEL_MAP = {
+    "claude":  ("z.ai",      "glm-5.1"),
+    "direct":  ("z.ai",      "glm-5.1"),
+    "glm5":    ("z.ai",      "glm-5"),
+    "sonnet":  ("anthropic", os.environ.get("ANTHROPIC_DISTILL_MODEL") or "claude-sonnet-4-6"),
+    "codex":   ("openai",    os.environ.get("CODEX_MODEL") or "gpt-5.5"),
+    "mimo":    ("xiaomi",    os.environ.get("MIMO_MODEL") or "mimo-v2.5-pro"),
+    "gemini":  ("google",    os.environ.get("GEMINI_MODEL") or "gemini-3-flash-preview"),
+}
+
+
+def canonicalize_record(fbgn: str, raw: dict, bundle: dict, meta: dict, harness: str = "claude") -> dict:
+    """Convert raw bullets into canonical schema. `harness` is the pipeline-level
+    backend selector (claude/sonnet/codex/glm5/direct); it drives the model_id +
+    provider fields written into request_meta.json so canonicalize.py attributes
+    each gene to the actual backend rather than defaulting to glm-5.1."""
     from canonicalize import canonicalize_one
-    # canonicalize_one re-reads files from disk; for parallel pipeline we already
-    # have them in memory. Re-use the function by writing bullets.json first.
-    out_dir = ROOT / "output" / fbgn       # legacy location; canonicalize reads here
+    out_dir = ROOT / "output" / fbgn
     out_dir.mkdir(parents=True, exist_ok=True)
+    provider, model_id = _HARNESS_MODEL_MAP.get(harness, ("z.ai", "glm-5.1"))
     (out_dir / "bullets.json").write_text(json.dumps(raw, indent=2))
     (out_dir / "request_meta.json").write_text(json.dumps({
-        "model": "glm-5.1", "usage": meta.get("usage", {}),
+        "provider": provider,
+        "model": model_id,
+        "pipeline_harness": harness,
+        "thinking_tokens_env": os.environ.get("ANTHROPIC_MAX_THINKING_TOKENS"),
+        "usage": meta.get("usage", {}),
         "elapsed_s": meta.get("elapsed_s"),
+        "recovered_via_shrink_level": meta.get("recovered_via_shrink_level"),
     }, indent=2))
     return canonicalize_one(fbgn)
 
@@ -305,10 +330,12 @@ def distill_with_retry(fbgn: str, bundle: dict, harness: str, run_log: Path, max
                 "retrying": attempt < max_attempts,
             })
             continue
-        canonical = canonicalize_record(fbgn, raw, cur_bundle, meta)
+        # Surface shrink-recovery BEFORE canonicalize so it lands in request_meta.json
+        # and canonicalize.py can emit a quality.bundle_shrunk _lint warning
+        if meta is not None and shrink_level > 0:
+            meta["recovered_via_shrink_level"] = shrink_level
+        canonical = canonicalize_record(fbgn, raw, cur_bundle, meta, harness=harness)
         if not has_schema_drift(canonical):
-            if meta is not None and shrink_level > 0:
-                meta["recovered_via_shrink_level"] = shrink_level
             return canonical, raw, meta, attempt
         append_jsonl(run_log / "failures.jsonl", {
             "ts": now(), "fbgn": fbgn, "stage": "schema_drift",
@@ -529,7 +556,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("gene_list_file", nargs="?",
                     help="path to file with one FBgn per line")
-    ap.add_argument("--harness", choices=["direct", "claude", "sonnet", "codex", "glm5"], default="claude",
+    ap.add_argument("--harness", choices=["direct", "claude", "sonnet", "codex", "glm5", "mimo", "gemini"], default="claude",
                     help="direct API or Claude Code headless")
     ap.add_argument("--batch-id", default=None)
     ap.add_argument("--dry-run", action="store_true")

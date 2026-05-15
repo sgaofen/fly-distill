@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — fly-distill atlas{% endblock %}
+{% block content %}
+<div>
+  <div class="text-xs uppercase text-stone-500 mb-1">{{ kind }}</div>
+  <h1 class="text-xl font-semibold mb-1">{{ title }}</h1>
+  <div class="text-sm text-stone-500 mb-4 num">{{ rows|length }} genes</div>
+
+  {% if not rows %}
+    <p class="text-stone-500 text-sm">No genes matched.</p>
+  {% else %}
+    <table class="w-full text-sm bg-white border border-stone-200 rounded overflow-hidden">
+      <thead class="bg-stone-50 text-xs uppercase text-stone-500">
+        <tr>
+          <th class="text-left p-2">Symbol</th>
+          <th class="text-left p-2">FBgn</th>
+          {% if kind == 'category' or kind == 'tissue' %}
+          <th class="text-right p-2 num">bullets</th>
+          {% elif kind == 'ortholog' %}
+          <th class="text-left p-2">DIOPT</th>
+          {% elif kind == 'disease' %}
+          <th class="text-left p-2">disease</th>
+          <th class="text-left p-2">via</th>
+          {% elif kind == 'paper' %}
+          <th class="text-left p-2">ref</th>
+          {% endif %}
+          <th class="text-left p-2">Summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr class="border-t border-stone-100">
+            <td class="p-2"><a href="/gene/{{ r.fbgn }}" class="text-blue-700 hover:underline font-medium">{{ r.symbol }}</a></td>
+            <td class="p-2 font-mono text-xs text-stone-500">{{ r.fbgn }}</td>
+            {% if kind == 'category' %}
+            <td class="p-2 text-right num">{{ r.n_in_cat }}</td>
+            {% elif kind == 'tissue' %}
+            <td class="p-2 text-right num">{{ r.n_bullets }}</td>
+            {% elif kind == 'ortholog' %}
+            <td class="p-2 num">{{ r.diopt_score or '?' }}</td>
+            {% elif kind == 'disease' %}
+            <td class="p-2 text-xs">{{ r.disease_name }}</td>
+            <td class="p-2 text-xs">{{ r.via_symbol or '' }}</td>
+            {% elif kind == 'paper' %}
+            <td class="p-2 text-xs">{{ r.miniref or '' }}</td>
+            {% endif %}
+            <td class="p-2 text-stone-700">{{ (r.summary or '')[:180] }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+{% endblock %}

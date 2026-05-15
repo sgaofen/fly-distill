@@ -1,12 +1,16 @@
-"""Distill one gene via Claude Code headless (`claude --print`) using the user's
-Max-plan OAuth — NO z.ai routing. Output schema is identical to distill_via_claude.py
-so canonicalize.py / pipeline.py treat it the same.
+"""Distill one gene via Claude Code headless routed to Xiaomi MiMo's
+Anthropic-compatible endpoint (`token-plan-cn.xiaomimimo.com/anthropic`).
 
-Use case: parallel pipeline alongside the GLM-based one to use Anthropic Max quota
-on top of z.ai quota, doubling effective throughput.
+Uses Stephen's Pro-tier Token Plan key (~7 billion tokens free). Same
+prompt/output schema as the GLM/Sonnet harnesses so canonicalize.py is
+backend-agnostic.
+
+Architecture mirrors distill_via_claude.py:
+  bundle → claude --print with ANTHROPIC_BASE_URL=MiMo + MIMO_API_KEY
+       → JSON wrapper → parse → bullets.json
 
 Usage:
-  python3 src/distill_via_sonnet.py FBgn0003068
+  MIMO_API_KEY=tp-... python3 src/distill_via_mimo.py FBgn0003068
 """
 import json
 import os
@@ -31,15 +35,14 @@ def load_env() -> dict:
 
 
 ENV = load_env()
-# Default: Sonnet 4.6 via Stephen's Max OAuth (~/.claude.json credentials).
-# Model selection: prefer os.environ (command-line override) then .env then default.
-# Without checking os.environ, command-line ANTHROPIC_DISTILL_MODEL=... was silently
-# ignored, causing weeks of "sonnet" pipeline calls to actually burn Opus quota.
-MODEL = os.environ.get("ANTHROPIC_DISTILL_MODEL") or ENV.get("ANTHROPIC_DISTILL_MODEL") or "claude-sonnet-4-6"
+BASE_URL = os.environ.get("MIMO_BASE_URL") or ENV.get("MIMO_BASE_URL") or "https://token-plan-sgp.xiaomimimo.com/anthropic"
+MODEL = os.environ.get("MIMO_MODEL") or ENV.get("MIMO_MODEL") or "mimo-v2.5-pro"
+API_KEY = os.environ.get("MIMO_API_KEY") or ENV.get("MIMO_API_KEY") or ""
+if not API_KEY:
+    sys.exit("Need MIMO_API_KEY env var (Xiaomi Token Plan tp-... key)")
 
 
 def build_user_prompt(bundle: dict) -> str:
-    """Re-use distill.py's bundle→prompt construction so output schema is identical."""
     import importlib.util
     spec = importlib.util.spec_from_file_location("distill", ROOT / "src" / "distill.py")
     mod = importlib.util.module_from_spec(spec)
@@ -57,21 +60,20 @@ def build_user_prompt(bundle: dict) -> str:
 
 
 def call_claude_headless(prompt: str, _unused_key: str = "", timeout_s: int = 900) -> dict:
-    """Invoke `claude --print --model <Opus/Sonnet>` using Stephen's Max OAuth.
-
-    900s subprocess timeout: Sonnet thinking-on with verbose outputs occasionally
-    exceeds the prior 360s on dense genes (Tip60-class with 100+ pubs). Going to
-    shrink_bundle on those would silently downgrade quality; better to give the
-    full bundle a longer chance to complete. Anthropic's silent throttle issue
-    (HTTP 200 + 0 tokens) is still bounded by this hard cap so Max quota isn't
-    bled forever on dead requests."""
+    """Invoke claude --print routed to MiMo endpoint via env vars.
+    900s ceiling because MiMo-V2.5-Pro is a 1.02T MoE with 1M context; very large
+    bundles can take a while to stream."""
     env = dict(os.environ)
-    # Strip any z.ai env that might leak in from a parent shell
-    for k in ("ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN",
-              "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
-              "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-              "CLAUDE_CONFIG_DIR"):
-        env.pop(k, None)
+    env.update({
+        "ANTHROPIC_BASE_URL": BASE_URL,
+        "ANTHROPIC_AUTH_TOKEN": API_KEY,
+        "ANTHROPIC_MODEL": MODEL,
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": MODEL,
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": MODEL,
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
+        # isolate auth state so MiMo doesn't collide with z.ai or Max OAuth
+        "CLAUDE_CONFIG_DIR": str(Path.home() / ".mimo-fly-distill"),
+    })
 
     proc = subprocess.run(
         [
@@ -95,7 +97,7 @@ def call_claude_headless(prompt: str, _unused_key: str = "", timeout_s: int = 90
             dbg = ROOT / "runs" / "claude_failures"
             dbg.mkdir(parents=True, exist_ok=True)
             stamp = time.strftime("%Y%m%dT%H%M%S")
-            (dbg / f"{stamp}_sonnet_rc{proc.returncode}.txt").write_text(
+            (dbg / f"{stamp}_mimo_rc{proc.returncode}.txt").write_text(
                 f"=== returncode: {proc.returncode}\n"
                 f"=== stderr ({len(proc.stderr or '')} chars):\n{proc.stderr or ''}\n"
                 f"=== stdout ({len(proc.stdout or '')} chars):\n{(proc.stdout or '')[:20000]}\n"
@@ -107,7 +109,7 @@ def call_claude_headless(prompt: str, _unused_key: str = "", timeout_s: int = 90
         except Exception:
             pass
         raise RuntimeError(
-            f"claude(sonnet) exited {proc.returncode}: "
+            f"claude(mimo) exited {proc.returncode}: "
             f"stderr={proc.stderr[:400]!r} stdout_head={(proc.stdout or '')[:600]!r}"
         )
     return json.loads(proc.stdout)
@@ -122,17 +124,16 @@ def strip_fences(s: str) -> str:
     return s.strip()
 
 
-# Dummy key rotator — pipeline expects this symbol but Sonnet uses OAuth, no key
 _dummy_lock = threading.Lock()
 def next_key() -> str:
-    return "OAUTH"
+    return "TP-PRO"
 
 
 def main():
     fbgn = sys.argv[1] if len(sys.argv) > 1 else "FBgn0003068"
     bundle = json.loads((ROOT / "data" / "cache" / fbgn / "bundle.json").read_text())
     prompt = build_user_prompt(bundle)
-    print(f"distilling {fbgn} via Sonnet ({MODEL}), prompt={len(prompt)} chars")
+    print(f"distilling {fbgn} via MiMo ({MODEL}), prompt={len(prompt)} chars")
     t0 = time.time()
     wrapper = call_claude_headless(prompt, "")
     print(f"  elapsed={time.time()-t0:.1f}s  is_error={wrapper.get('is_error')}")

@@ -59,3 +59,10 @@ venv/
 *.tmp
 /tmp/fb_*
 audit_summary.json
+
+# flyatlas runtime / build artifacts
+tools/atlas.db
+audit_FBgn*.json
+gene_lists/slice_*.txt
+gene_lists/quarantine_actual_todo.txt
+runs/

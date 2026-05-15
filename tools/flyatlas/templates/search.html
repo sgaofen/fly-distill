@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Search — fly-distill atlas{% endblock %}
+{% block content %}
+<div class="grid grid-cols-[200px_1fr] gap-6">
+  <aside class="space-y-4 text-sm">
+    <form action="/search" method="get" class="space-y-2">
+      <input type="hidden" name="q" value="{{ q }}">
+
+      <div>
+        <label class="text-xs uppercase text-stone-500">category</label>
+        <select name="category" class="w-full border border-stone-300 rounded px-2 py-1 mt-1 text-sm">
+          <option value="">(any)</option>
+          {% for c in ["behavior","morphology","lifespan_aging","development","reproduction","metabolism","immune","sensory_neural","stress_response","disease_model","expression_pattern","other"] %}
+            <option value="{{ c }}" {% if category==c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="text-xs uppercase text-stone-500">direction</label>
+        <select name="direction" class="w-full border border-stone-300 rounded px-2 py-1 mt-1 text-sm">
+          <option value="">(any)</option>
+          {% for d in ["loss_of_function","gain_of_function","either","unknown"] %}
+            <option value="{{ d }}" {% if direction==d %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="text-xs uppercase text-stone-500">confidence</label>
+        <select name="confidence" class="w-full border border-stone-300 rounded px-2 py-1 mt-1 text-sm">
+          <option value="">(any)</option>
+          {% for c in ["high","medium","low"] %}
+            <option value="{{ c }}" {% if confidence==c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="text-xs uppercase text-stone-500">tissue (exact)</label>
+        <input name="tissue" value="{{ tissue or '' }}" class="w-full border border-stone-300 rounded px-2 py-1 mt-1 text-sm" placeholder="eye, muscle, …">
+      </div>
+
+      <button class="w-full bg-stone-800 text-white text-sm py-1.5 rounded hover:bg-stone-700">Filter</button>
+    </form>
+
+    <div class="text-xs text-stone-500 space-y-1 mt-6">
+      <div><strong>Query tips:</strong></div>
+      <div><code>eye AND lethal</code></div>
+      <div><code>"Z disc" AND muscle</code></div>
+      <div><code>chico OR sin</code></div>
+      <div><code>tauopathy NOT zebrafish</code></div>
+    </div>
+  </aside>
+
+  <main>
+    {% if not q %}
+      <p class="text-stone-500 text-sm">Enter a query in the search bar above.</p>
+    {% elif not results %}
+      <p class="text-stone-500 text-sm">No matches for <code>{{ q }}</code>.</p>
+    {% else %}
+      <div class="text-sm text-stone-600 mb-3 num">{{ results|length }} matches for <strong class="text-stone-900">{{ q }}</strong></div>
+      <ul class="space-y-3">
+        {% for r in results %}
+          <li class="bg-white p-3 rounded border border-stone-200">
+            <div class="flex items-baseline gap-2">
+              <a href="/gene/{{ r.fbgn }}" class="text-blue-700 hover:underline font-semibold">{{ r.symbol }}</a>
+              <code class="text-xs text-stone-500">{{ r.fbgn }}</code>
+              <span class="text-xs text-stone-500">· bullets {{ r.n_bullets }} · {{ r.provider }}</span>
+            </div>
+            <div class="text-sm text-stone-700 mt-1">{{ r.snip|safe }}</div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}
