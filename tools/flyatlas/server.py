@@ -63,17 +63,40 @@ def search_page(request: Request, q: str = "",
                 direction: Optional[str] = None,
                 confidence: Optional[str] = None,
                 tissue: Optional[str] = None,
+                region: Optional[str] = None,
+                mode: str = "semantic",   # 'semantic' (default) | 'keyword'
                 limit: int = 50):
     results = []
     if q:
         try:
-            results = Q.search(DB, q, category=category, direction=direction,
-                              confidence=confidence, tissue=tissue, limit=limit)
+            if mode == "keyword":
+                results = Q.search(DB, q, category=category, direction=direction,
+                                   confidence=confidence, tissue=tissue, limit=limit)
+            else:
+                # Semantic search (Gemini embeddings) — optional region filter
+                from . import embed_query as EQ
+                hybrid = EQ.hybrid_query(region, q, top_k=limit)
+                results = hybrid.get("ranked", []) if "error" not in hybrid else []
+                # Apply categorical filters as post-hoc: drop genes that have no bullet in that cat/dir/conf
+                if results and (category or direction or confidence):
+                    import sqlite3
+                    c = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+                    keep = []
+                    for r in results:
+                        cond_sql = "SELECT 1 FROM bullets WHERE fbgn=?"
+                        args_sql: list = [r["fbgn"]]
+                        if category:   cond_sql += " AND category=?";   args_sql.append(category)
+                        if direction:  cond_sql += " AND direction=?";  args_sql.append(direction)
+                        if confidence: cond_sql += " AND confidence=?"; args_sql.append(confidence)
+                        cond_sql += " LIMIT 1"
+                        if c.execute(cond_sql, args_sql).fetchone():
+                            keep.append(r)
+                    results = keep
         except Exception as e:
             results = []
     return TEMPLATES.TemplateResponse("search.html", {
-        "request": request, "q": q, "results": results,
-        "category": category, "direction": direction,
+        "request": request, "q": q, "results": results, "mode": mode,
+        "category": category, "direction": direction, "region": region,
         "confidence": confidence, "tissue": tissue,
     })
 
@@ -151,6 +174,35 @@ def api_category(cat: str, confidence: Optional[str] = None, limit: int = 500):
 @app.get("/api/stats")
 def api_stats():
     return Q.stats(DB)
+
+
+@app.get("/api/region/{region}")
+def api_region(region: str):
+    from . import embed_query as EQ
+    loc = EQ.parse_region_string(region)
+    if not loc:
+        raise HTTPException(400, f"bad region: {region}")
+    return EQ.genes_in_region(*loc)
+
+
+@app.get("/api/semantic")
+def api_semantic(q: str, limit: int = 20, region: Optional[str] = None):
+    from . import embed_query as EQ
+    return EQ.hybrid_query(region, q, top_k=limit)
+
+
+@app.get("/ask", response_class=HTMLResponse)
+def ask_page(request: Request, q: str = "", region: Optional[str] = None, limit: int = 10):
+    from . import embed_query as EQ
+    result = None
+    if q:
+        try:
+            result = EQ.hybrid_query(region, q, top_k=limit)
+        except Exception as e:
+            result = {"error": str(e)}
+    return TEMPLATES.TemplateResponse("ask.html", {
+        "request": request, "q": q, "region": region, "result": result,
+    })
 
 
 if __name__ == "__main__":

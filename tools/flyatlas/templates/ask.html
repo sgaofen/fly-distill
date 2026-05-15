@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Phenotype query — fly-distill atlas{% endblock %}
+{% block content %}
+<div class="space-y-4">
+  <header>
+    <h1 class="text-xl font-semibold">Phenotype-driven gene ranking</h1>
+    <p class="text-sm text-stone-600 mt-1">
+      Semantic search powered by Gemini embeddings over the full gene corpus.
+      Combine with an optional QTL region filter (e.g., <code>2L:5e6-6e6</code>)
+      to rank only the genes within mapped coordinates.
+    </p>
+  </header>
+
+  <form action="/ask" method="get" class="bg-white p-4 rounded border border-stone-200 space-y-3">
+    <div>
+      <label class="text-xs uppercase text-stone-500">Phenotype query (free text)</label>
+      <input name="q" value="{{ q or '' }}" class="w-full border border-stone-300 rounded px-3 py-2 mt-1 text-sm"
+             placeholder="e.g. pupa height, alcohol sensitivity, hindwing margin, circadian period"
+             autofocus>
+    </div>
+    <div>
+      <label class="text-xs uppercase text-stone-500">QTL region (optional)</label>
+      <input name="region" value="{{ region or '' }}" class="w-full border border-stone-300 rounded px-3 py-2 mt-1 text-sm"
+             placeholder="e.g. 2L:5000000-6000000 or 2L:5e6-6e6">
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="bg-stone-800 text-white text-sm px-4 py-1.5 rounded hover:bg-stone-700">Search</button>
+      <span class="text-xs text-stone-500">No region → semantic search across all 14,019 genes.</span>
+    </div>
+  </form>
+
+  {% if result %}
+    {% if result.error %}
+      <div class="bg-red-50 border border-red-200 p-3 rounded text-sm text-red-700">{{ result.error }}</div>
+    {% else %}
+      <div class="text-sm text-stone-600">
+        {% if result.region %}
+          Region <code>{{ result.region }}</code> contains <strong>{{ result.region_gene_count }}</strong> genes.
+        {% endif %}
+        Top <strong>{{ result.ranked|length }}</strong> by semantic similarity to <em>"{{ result.query }}"</em>:
+      </div>
+      <ol class="space-y-2">
+        {% for g in result.ranked %}
+        <li class="bg-white p-3 rounded border border-stone-200">
+          <div class="flex items-baseline gap-2">
+            <span class="text-stone-500 num">{{ loop.index }}.</span>
+            <a href="/gene/{{ g.fbgn }}" class="font-semibold text-blue-700 hover:underline">{{ g.symbol }}</a>
+            <code class="text-xs text-stone-500">{{ g.fbgn }}</code>
+            {% if g.chr %}<span class="text-xs text-stone-500">{{ g.chr }}:{{ "{:,}".format(g.start) }}–{{ "{:,}".format(g.end) }}</span>{% endif %}
+            <span class="ml-auto text-xs text-green-700 num">score {{ "%.3f"|format(g.score) }}</span>
+          </div>
+          <p class="text-sm text-stone-700 mt-1">{{ (g.summary or '')[:300] }}</p>
+        </li>
+        {% endfor %}
+      </ol>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

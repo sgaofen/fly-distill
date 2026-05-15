@@ -161,22 +161,36 @@ def cmd_gene(args):
 
 
 def cmd_search(args):
-    rows = Q.search(args.db, args.query,
-                    category=args.category, direction=args.direction,
-                    confidence=args.confidence, tissue=args.tissue,
-                    limit=args.limit)
+    """Default = semantic (Gemini); use --keyword for FTS5 string match."""
+    if args.keyword:
+        rows = Q.search(args.db, args.query,
+                        category=args.category, direction=args.direction,
+                        confidence=args.confidence, tissue=args.tissue,
+                        limit=args.limit)
+        mode_label = "keyword (FTS5)"
+    else:
+        from . import embed_query as EQ
+        hybrid = EQ.hybrid_query(args.region, args.query, top_k=args.limit)
+        rows = hybrid.get("ranked", [])
+        mode_label = "semantic (Gemini)"
     if args.json:
         print(json.dumps(rows, indent=2, ensure_ascii=False)); return
-    print(cfmt(f"Found {len(rows)} genes for: ", "bold") + cfmt(args.query, "cyan"))
+    region_str = f" in region {args.region}" if args.region else ""
+    print(cfmt(f"Found {len(rows)} genes for: ", "bold") + cfmt(args.query, "cyan")
+          + cfmt(f"  [{mode_label}{region_str}]", "dim"))
     print(hr())
     for r in rows:
-        print(f"{cfmt(r['symbol'], 'cyan', 'bold')} {cfmt('('+r['fbgn']+')', 'dim')} "
-              f"{cfmt('· bullets='+str(r['n_bullets']), 'dim')}")
+        score_str = cfmt(f" score={r['score']:.3f}", "green") if r.get("score") is not None else ""
+        chr_str = cfmt(f" {r.get('chr','')}:{r.get('start','')}", "dim") if r.get('chr') else ""
+        print(f"{cfmt(r['symbol'], 'cyan', 'bold')} {cfmt('('+r['fbgn']+')', 'dim')}"
+              + chr_str + score_str
+              + cfmt(f' · bullets={r.get("n_bullets","?")}', "dim"))
         snip = r.get("snip") or ""
         if snip:
-            # Replace bold markers
             snip = snip.replace("<b>", "\033[1m").replace("</b>", "\033[22m") if use_color() else snip.replace("<b>","").replace("</b>","")
             print(wrap(snip, indent="  "))
+        elif r.get("summary"):
+            print(wrap(r["summary"][:280], indent="  "))
         print()
 
 
@@ -220,6 +234,113 @@ def cmd_category(args):
           + cfmt(" phenotype bullets", "bold"))
     render_table(rows, [("fbgn","FBgn",13),("symbol","Symbol",16),
                         ("n_in_cat","#bullets",10),("summary","Summary",45)])
+
+
+def cmd_region(args):
+    from . import embed_query as EQ
+    loc = EQ.parse_region_string(args.region)
+    if not loc:
+        print(cfmt(f"bad region: {args.region}", "red"), file=sys.stderr); sys.exit(1)
+    chr_, start, end = loc
+    rows = EQ.genes_in_region(chr_, start, end)
+    if args.json: print(json.dumps(rows, indent=2)); return
+    print(cfmt(f"{len(rows)} genes in {chr_}:{start:,}-{end:,}", "bold"))
+    render_table(rows, [("fbgn","FBgn",13),("symbol","Symbol",16),
+                        ("start","Start",12),("n_bullets","Bullets",8),
+                        ("summary","Summary",40)])
+
+
+def cmd_export_bed(args):
+    """Dump every gene's chr/start/end/fbgn/symbol as a BED-like TSV.
+    Sorted by chromosome + start. Suitable for `bedtools intersect`."""
+    import sqlite3
+    c = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
+    c.row_factory = sqlite3.Row
+    sql = ("SELECT chr, start, end, fbgn, symbol, n_bullets FROM genes "
+           "WHERE chr IS NOT NULL ORDER BY chr, start")
+    rows = list(c.execute(sql))
+    out = sys.stdout if args.out == "-" else open(args.out, "w")
+    if args.format == "bed":
+        # BED6: chrom start end name score strand   (we use n_bullets as score, '+' placeholder)
+        for r in rows:
+            out.write(f"{r['chr']}\t{r['start']}\t{r['end']}\t{r['fbgn']}|{r['symbol']}\t{r['n_bullets']}\t+\n")
+    elif args.format == "tsv":
+        out.write("chr\tstart\tend\tfbgn\tsymbol\tn_bullets\n")
+        for r in rows:
+            out.write(f"{r['chr']}\t{r['start']}\t{r['end']}\t{r['fbgn']}\t{r['symbol']}\t{r['n_bullets']}\n")
+    else:  # json
+        out.write(json.dumps([dict(r) for r in rows], indent=2))
+    if out is not sys.stdout: out.close()
+    print(f"  → {len(rows)} genes written to {args.out} ({args.format})", file=sys.stderr)
+
+
+def cmd_regions(args):
+    """Batch region query: input a BED file (or tab-separated chr/start/end on
+    stdin), output for each region the genes in it."""
+    from . import embed_query as EQ
+    import csv
+    src = sys.stdin if args.input == "-" else open(args.input)
+    out_rows = []
+    region_count = 0
+    for line in src:
+        line = line.strip()
+        if not line or line.startswith("#") or line.lower().startswith("chr\t"):
+            continue
+        parts = line.split("\t") if "\t" in line else line.split()
+        if len(parts) < 3: continue
+        chr_, start, end = parts[0], int(parts[1]), int(parts[2])
+        label = parts[3] if len(parts) > 3 else f"{chr_}:{start}-{end}"
+        genes = EQ.genes_in_region(chr_, start, end)
+        region_count += 1
+        for g in genes:
+            out_rows.append({"region": label, **g})
+    if src is not sys.stdin: src.close()
+
+    if args.json: print(json.dumps(out_rows, indent=2)); return
+    out = sys.stdout if args.out == "-" else open(args.out, "w")
+    out.write("region\tchr\tstart\tend\tfbgn\tsymbol\tn_bullets\n")
+    for r in out_rows:
+        out.write(f"{r['region']}\t{r['chr']}\t{r['start']}\t{r['end']}\t{r['fbgn']}\t{r['symbol']}\t{r['n_bullets']}\n")
+    if out is not sys.stdout: out.close()
+    print(f"  → {region_count} regions, {len(out_rows)} gene rows", file=sys.stderr)
+
+
+def cmd_semantic(args):
+    from . import embed_query as EQ
+    results = EQ.semantic_search(args.query, top_k=args.limit)
+    if args.json: print(json.dumps(results, indent=2)); return
+    print(cfmt(f"Top {len(results)} semantic matches for: ", "bold") + cfmt(args.query, "cyan"))
+    print(hr())
+    c = __import__("sqlite3").connect(f"file:{args.db}?mode=ro", uri=True)
+    c.row_factory = __import__("sqlite3").Row
+    for r in results:
+        g = c.execute("SELECT symbol, summary, n_bullets FROM genes WHERE fbgn=?", (r["fbgn"],)).fetchone()
+        sym = g["symbol"] if g else "?"
+        print(f"  {cfmt(sym, 'cyan', 'bold')} {cfmt('('+r['fbgn']+')', 'dim')} "
+              + cfmt(f"score={r['score']:.3f}", "green"))
+        if g and g["summary"]:
+            print(wrap(g["summary"][:240], indent="    "))
+        print()
+
+
+def cmd_ask(args):
+    """Hybrid: region (optional) + phenotype semantic search."""
+    from . import embed_query as EQ
+    out = EQ.hybrid_query(args.region, args.query, top_k=args.limit)
+    if args.json: print(json.dumps(out, indent=2)); return
+    if "error" in out:
+        print(cfmt(out["error"], "red"), file=sys.stderr); sys.exit(1)
+    if out.get("region"):
+        print(cfmt(f"Region {out['region']}: ", "bold") + f"{out['region_gene_count']} genes")
+    if out.get("query"):
+        print(cfmt(f"Phenotype query: ", "bold") + cfmt(out["query"], "cyan"))
+    print(hr())
+    for g in out.get("ranked", []):
+        print(f"  {cfmt(g['symbol'], 'cyan', 'bold')} {cfmt('('+g['fbgn']+')', 'dim')} "
+              f"{cfmt(g.get('chr') or '', 'dim')}  "
+              + cfmt(f"score={g['score']:.3f}", "green"))
+        print(wrap((g.get("summary") or "")[:240], indent="    "))
+        print()
 
 
 def cmd_stats(args):
@@ -266,13 +387,15 @@ def build_parser():
     sp.add_argument("--max-bullets", type=int, default=999)
     sp.set_defaults(func=cmd_gene)
 
-    sp = sub.add_parser("search", help="FTS5 full-text search across summary+bullets")
+    sp = sub.add_parser("search", help="Default semantic (Gemini); --keyword for FTS5")
     sp.add_argument("query")
+    sp.add_argument("--region", help="Optional region filter, e.g. 2L:5e6-6e6")
+    sp.add_argument("--keyword", action="store_true", help="Use FTS5 keyword match instead of semantic")
     sp.add_argument("--category")
     sp.add_argument("--direction", choices=["loss_of_function","gain_of_function","either","unknown"])
     sp.add_argument("--confidence", choices=["high","medium","low"])
     sp.add_argument("--tissue")
-    sp.add_argument("--limit", type=int, default=50)
+    sp.add_argument("--limit", type=int, default=20)
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_search)
 
@@ -309,6 +432,35 @@ def build_parser():
     sp.add_argument("--limit", type=int, default=500)
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_category)
+
+    sp = sub.add_parser("region", help="Genes in a chromosome region (e.g. 2L:5e6-6e6)")
+    sp.add_argument("region", help="chr:start-end, e.g. 2L:5000000-6000000 or 2L:5e6-6e6")
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_region)
+
+    sp = sub.add_parser("export-bed", help="Dump every gene's chr/start/end as BED/TSV/JSON (for bedtools intersect)")
+    sp.add_argument("--out", default="-", help="output file or '-' for stdout")
+    sp.add_argument("--format", choices=["bed","tsv","json"], default="bed")
+    sp.set_defaults(func=cmd_export_bed)
+
+    sp = sub.add_parser("regions", help="Batch region query from a BED file (stdin or file)")
+    sp.add_argument("input", help="BED file path or '-' for stdin")
+    sp.add_argument("--out", default="-")
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_regions)
+
+    sp = sub.add_parser("semantic", help="Semantic phenotype search via Gemini embeddings")
+    sp.add_argument("query", help="Free-text phenotype, e.g. 'pupa height' or 'alcohol sensitivity'")
+    sp.add_argument("--limit", type=int, default=20)
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_semantic)
+
+    sp = sub.add_parser("ask", help="Hybrid: region (optional) + semantic phenotype rank")
+    sp.add_argument("query", help="Phenotype, e.g. 'pupa height'")
+    sp.add_argument("--region", help="Chr:start-end filter (optional)")
+    sp.add_argument("--limit", type=int, default=10)
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_ask)
 
     sp = sub.add_parser("stats", help="Atlas-wide statistics")
     sp.add_argument("--json", action="store_true")

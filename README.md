@@ -1,14 +1,15 @@
-# fly-distill — Drosophila phenotype atlas
+# fly-distill — Drosophila phenotype atlas with semantic search
 
-A structured, source-cited phenotype atlas for **14,019 protein-coding *Drosophila melanogaster* genes**, distilled from FlyBase + Alliance + OMIM via five independent LLM backends with verbatim-quote verification. Built as a Long Lab (UCI) flagship project for QTL fine-mapping and disease modeling.
+A structured, source-cited phenotype atlas for **14,019 protein-coding *Drosophila melanogaster* genes**, distilled from FlyBase + Alliance + OMIM via five independent LLM backends with verbatim-quote verification, plus a **Gemini-embedded semantic search layer** over the full corpus. Built as a Long Lab (UCI) flagship project for QTL fine-mapping and disease modeling.
 
 | Metric | Value |
 |---|---|
 | Genes covered | **14,019** |
-| Phenotype bullets | **~150,000** (mean ~11 / gene) |
-| Unique paper citations | **20,480** FBrf with PubMed + DOI |
-| Cross-species orthologs | **28,000+** human + mouse, DIOPT-scored |
-| OMIM disease links | **5,000+** via ortholog |
+| Phenotype bullets | **~160,000** (mean ~11 / gene) |
+| Unique paper citations | **21,047** FBrf with PubMed + DOI |
+| Cross-species orthologs | **30,000+** human + mouse, DIOPT-scored |
+| OMIM disease links | **5,200+** via ortholog |
+| Semantic embeddings | **14,019 × 3,072 dim** (Gemini `gemini-embedding-2`, 152 MB) |
 | Verbatim-quote verification | **100%** across 200+ hand-audited bullets, 0 hallucination |
 
 ---
@@ -19,6 +20,7 @@ A structured, source-cited phenotype atlas for **14,019 protein-coding *Drosophi
 - **Structured phenotype bullets** with category / direction / confidence / verbatim FlyBase or paper-abstract evidence
 - **Human + mouse orthologs** (DIOPT-scored, Alliance + FlyBase curated)
 - **OMIM disease links** with `via_ortholog` provenance
+- **Chromosome coordinates** (chr/start/end) for region-based QTL fine-mapping
 - **Reference list** — every FBrf cited with miniref + PubMed + DOI + FlyBase URLs
 - **Tissue / life-stage / allele tags** parsed from evidence
 - **Model + provenance trail** — bundle SHA256, prompt SHA256, raw-LLM-output SHA256, pipeline git commit
@@ -27,11 +29,12 @@ A structured, source-cited phenotype atlas for **14,019 protein-coding *Drosophi
 
 ## Web UI
 
-A local academic-style browser sits on top of a single SQLite + FTS5 index.
+A local academic-style browser sits on top of a single SQLite + FTS5 index, plus an in-memory embedding matrix.
 
 ```bash
-pip install fastapi uvicorn jinja2
-cd tools && python -m flyatlas.build       # one-time ETL
+pip install fastapi uvicorn jinja2 numpy
+cd tools && python -m flyatlas.build       # one-time ETL (~90s)
+python -m flyatlas.embed_build             # one-time Gemini embed (~10min, $1.50)
 python -m flyatlas.cli serve               # → http://localhost:8765
 ```
 
@@ -43,11 +46,17 @@ python -m flyatlas.cli serve               # → http://localhost:8765
 
 ![gene](docs/screenshots/gene.png)
 
-### Full-text search with filters (FTS5, boolean operators)
+### `/ask` — hybrid semantic + region search (new)
+
+Free-text phenotype query, optionally constrained to a QTL region. Backed by Gemini `gemini-embedding-2` semantic recall.
+
+![ask](docs/screenshots/ask.png)
+
+### `/search` — semantic by default, FTS5 keyword as fallback (new)
 
 ![search](docs/screenshots/search.png)
 
-### Browse by category / tissue / disease / ortholog / paper
+### `/browse` — by category / tissue / disease / ortholog / paper
 
 ![browse](docs/screenshots/browse.png)
 
@@ -55,20 +64,25 @@ python -m flyatlas.cli serve               # → http://localhost:8765
 
 ## CLI
 
-Terminal access to the atlas — 8 verbs, all `--json` capable:
-
 ```bash
-fly gene chico                              # full detail
-fly search "eye AND lethal" --confidence high
-fly disease 254100                          # MDRP fly models
-fly ortholog IRS1                           # fly orthologs of human IRS1
-fly paper FBrf0210226                       # genes citing this paper
-fly tissue eye                              # genes with bullets tagged with eye
-fly category disease_model                  # phenotype-category browse
-fly stats                                   # atlas-wide stats
+flyatlas gene chico                       # full detail
+flyatlas search "pupa height"             # semantic search (default)
+flyatlas search "Z disc AND muscle" --keyword   # FTS5 keyword fallback
+flyatlas ask "pupa height" --region 2L:5e6-6e6  # hybrid: region filter ∘ semantic rank
+flyatlas semantic "alcohol sensitivity"   # pure semantic over full atlas
+flyatlas region 2L:5e6-6e6                # all genes in a chromosome region
+flyatlas regions qtl_peaks.bed            # batch — input BED file
+flyatlas export-bed --format bed          # dump all 14k genes' coordinates as BED
+flyatlas disease 254100                   # MDRP fly models
+flyatlas ortholog IRS1                    # fly orthologs of human IRS1
+flyatlas paper FBrf0210226                # genes citing this paper
+flyatlas tissue eye                       # genes with bullets tagged with eye
+flyatlas category disease_model           # phenotype-category browse
+flyatlas stats                            # atlas-wide stats
+flyatlas serve                            # launch Web UI
 ```
 
-Each command also has an HTTP API counterpart under `/api/*` for headless / SPA use.
+Each command also accepts `--json` for piping.
 
 ---
 
@@ -76,34 +90,84 @@ Each command also has an HTTP API counterpart under `/api/*` for headless / SPA 
 
 Drop `tools/skill/SKILL.md` into `~/.claude/skills/fly-atlas/` so any Claude
 agent on this machine can query the atlas autonomously when it sees a fly /
-phenotype / disease question. The skill knows when to use which CLI verb and
-how to chain results.
+phenotype / disease question. The skill knows when to use which CLI verb
+(semantic for free-text concepts, keyword for exact phrases, region for QTL
+intervals, paper/ortholog/disease for structured lookups).
+
+---
+
+## QTL fine-mapping workflow (example)
+
+Long-lab-style: you have a QTL peak from BSA/XQTL/RIL mapping, you want to
+narrow down to a small set of candidate genes for the phenotype you assayed.
+
+```bash
+# 1. Get all genes in your peak interval
+flyatlas region 2L:5000000-6000000 --json > peak_genes.json    # 122 genes
+
+# 2. Hybrid: rank those genes by relevance to your phenotype
+flyatlas ask "pupa height pupariation behavior climbing larval-pupal transition" \
+         --region 2L:5e6-6e6 --limit 15
+
+#   Top hits include obst-E (abnormal pupal body size + failed metamorphic reshaping),
+#   verm + Cpr97Ea + Edg84A (cuticle proteins), pot (epithelial-ECM attachment) — the
+#   biology lines up immediately.
+
+# 3. Drill in on a candidate
+flyatlas gene obst-E
+```
+
+Or batch many peaks at once:
+
+```bash
+cat qtl_peaks.bed
+# 2L  5000000  5500000  QTL_pupa_height
+# 3R  10000000 10500000 QTL_alcohol_response
+# X   15000000 15800000 QTL_lifespan
+
+flyatlas regions qtl_peaks.bed --out genes_per_peak.tsv
+# → 3 regions, 210 gene rows with chr/start/end/fbgn/symbol/n_bullets
+```
+
+Or just dump every gene's coordinates and `bedtools intersect` yourself:
+
+```bash
+flyatlas export-bed --format bed --out all_genes.bed
+bedtools intersect -a my_qtl_peaks.bed -b all_genes.bed -wa -wb
+```
 
 ---
 
 ## Multi-backend distillation
 
-Each gene is distilled by **one** of five LLM backends through a unified
-Claude-Code-headless harness:
+Each gene's bullets are distilled by **one** of five LLM backends through a
+unified Claude-Code-headless harness:
 
 | Backend | Model | Notes |
 |---|---|---|
-| Anthropic | `claude-sonnet-4-6` (thinking-on) | best multi-paper integration, slowest |
+| Anthropic | `claude-sonnet-4-6` (thinking-on) | best multi-paper integration |
 | OpenAI    | `gpt-5.5` via Codex CLI         | fastest, concise; main workhorse |
 | Z.ai      | `glm-5.1`                       | balanced, ~10 sustained concurrency |
-| Xiaomi    | `mimo-v2.5-pro` (Token Plan)    | fast + cheap, dense bullets, free-tier-friendly |
+| Xiaomi    | `mimo-v2.5-pro` (Token Plan)    | fast + cheap, dense bullets |
 | Google    | `gemini-3-flash-preview`        | small daily quota, used for sweep |
 
 All five share the same `prompts/distill_system.md` and emit the same
 canonical schema (v1.2) — backend choice is recorded per-gene in
 `model.{provider, model_id, harness}`.
 
-### Hand-verified across all backends
+The **embedding layer is separate** from distillation: Gemini
+`gemini-embedding-2` (3072-dim, L2-normalized) over the concatenated summary
++ bullets text. One-shot build cost ≈ $1.50; query cost ≈ $0.000003 each.
 
-200+ phenotype bullets hand-audited across 16 random genes spanning 4
-backends and 1–500+ pub densities: **100% verbatim quote coverage, 0
+---
+
+## Hand-verified across all backends
+
+200+ phenotype bullets hand-audited across 4 backends and 16+ random genes
+spanning 1–500+ pub densities: **100% verbatim quote coverage, 0
 hallucination**. Quote integrity is a hard architectural property of the
-pipeline, not a soft target.
+pipeline, not a soft target — the canonicalize step rejects bullets whose
+evidence text isn't a substring of the input.
 
 ---
 
@@ -122,8 +186,8 @@ pipeline, not a soft target.
                                        ▼
               ┌────────────────────────────────────────┐
               │  distill_via_{sonnet,codex,claude,     │
-              │                mimo,gemini}.py         │  ← TOS-clean
-              │  → bullets.json + request_meta.json    │     headless harness
+              │                mimo,gemini}.py         │
+              │  → bullets.json + request_meta.json    │
               └────────────────────────────────────────┘
                                        │
                             canonicalize.py (enrich + dedup)
@@ -131,15 +195,19 @@ pipeline, not a soft target.
                                        ▼
                        output/genes/<FBgn>.json (v1.2)
                                        │
+                  ┌────────────────────┴────────────────────┐
+                  ▼                                         ▼
+            atlas.db                                embeddings.npz
+       (SQLite + FTS5,                       (14019 × 3072 float32,
+        chr/start/end                         Gemini-embedding-2,
+        indexed)                              L2 normalized)
+                  │                                         │
+                  └────────────────────┬────────────────────┘
                                        ▼
-                                 ┌──────┴──────┐
-                                 │   atlas.db  │  ← SQLite + FTS5
-                                 └─────────────┘
-                                       │
-              ┌────────────────────────┼────────────────────────┐
-              ▼                        ▼                        ▼
-            CLI                       Web UI                  Skill
-       (terminal)                  (FastAPI)               (Claude agent)
+              ┌─────────────────┬──────┴──────┬──────────────┐
+              ▼                 ▼             ▼              ▼
+            CLI             Web UI         REST API      Claude skill
+       (terminal)         (FastAPI)         (JSON)      (agent autonomy)
 ```
 
 ---
@@ -151,7 +219,7 @@ src/                       distillation pipeline
   fetch_gene_v2.py          bundle builder (bulk-only)
   bulk_index.py             FlyBase TSV loader (singleton)
   distill_via_*.py          5 backends, unified API
-  canonicalize.py           bullets → v1.2 schema + enrichment
+  canonicalize.py           bullets → v1.2 schema + enrichment + ortholog dedup
   rate_limiter.py           time-aware floor + 429 backoff
   pipeline.py               orchestrator (fetch + distill + canonicalize)
   qa.py                     deterministic + LLM tier-2 audits
@@ -165,12 +233,14 @@ output/
   genes/<FBgn>.json         canonical schema v1.2 (14,019 files)
   qa/                       audit reports
 tools/
-  flyatlas/                 Web UI + CLI + DB layer
-    build.py                output → atlas.db (SQLite + FTS5)
-    query.py                read-only data layer
+  flyatlas/                 Web UI + CLI + DB + embedding layer
+    build.py                output → atlas.db (SQLite + FTS5 + chr coords)
+    embed_build.py          output → embeddings.npz (Gemini embeddings)
+    query.py                read-only data layer (CLI + Web shared)
+    embed_query.py          semantic + region + hybrid retrieval
     cli.py                  terminal commands
     server.py               FastAPI + Jinja2
-    templates/              4 HTML templates
+    templates/              5 HTML templates (home/gene/search/browse/ask)
   skill/SKILL.md            agent skill file
 docs/
   screenshots/              Web UI screenshots
@@ -249,9 +319,9 @@ runs/                       per-batch logs + failures + completed
 
 ## Use cases
 
-- **Forward-genetics**: rank candidate genes from XQTL / RNAi / CRISPR screens against phenotype keywords
-- **Disease modeling**: find fly models of a human OMIM disease
-- **Drug-discovery / target validation**: human target → fly ortholog → known phenotype
+- **Forward-genetics / QTL fine-mapping**: rank candidate genes in a mapped region against your phenotype using `flyatlas ask <phenotype> --region <peak>`
+- **Disease modeling**: find fly models of a human OMIM disease via `flyatlas disease`
+- **Drug-discovery / target validation**: human target → fly ortholog → known phenotype via `flyatlas ortholog`
 - **Aging / behavior / immunity / metabolism panels**: browse by phenotype category
 - **Comp-bio ML training corpus**: structured, source-cited, verbatim-quote-verified
 - **Teaching**: browse / search instead of clicking through FlyBase entry pages
@@ -262,7 +332,7 @@ runs/                       per-batch logs + failures + completed
 
 If you use this atlas in a publication, please cite:
 
-> Stephen Yu, [Long Lab UCI]. fly-distill: a multi-backend LLM-distilled Drosophila phenotype atlas with verbatim-quote verification. 2026.
+> Stephen Yu, [Long Lab UCI]. fly-distill: a multi-backend LLM-distilled Drosophila phenotype atlas with Gemini-embedded semantic search and verbatim-quote verification. 2026.
 
 Upstream data sources should be cited per their own terms:
 **FlyBase** (Öztürk-Çolak et al., 2024), **Alliance of Genome Resources**, **OMIM**, **NCBI PubMed**.
