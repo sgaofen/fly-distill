@@ -31,8 +31,23 @@ A structured, source-cited phenotype atlas for **14,019 protein-coding *Drosophi
 
 A local academic-style browser sits on top of a single SQLite + FTS5 index, plus an in-memory embedding matrix.
 
+### Quick start (use prebuilt v1.3 — no $1.50 rebuild)
+
+The atlas + embeddings are published as a [GitHub release](https://github.com/sgaofen/fly-distill/releases/tag/v1.3), so you only need a Gemini key for **query-time** embedding (one tiny call per search, essentially free).
+
 ```bash
 pip install fastapi uvicorn jinja2 numpy
+gh release download v1.3 -R sgaofen/fly-distill -p '*.tar.gz' --dir release
+tar -xzf release/fly-distill-atlas-db-v1.3.tar.gz     -C tools/    # → tools/atlas.db
+tar -xzf release/fly-distill-embeddings-v1.3.tar.gz   -C tools/    # → tools/embeddings.npz
+tar -xzf release/fly-distill-canonicals-v1.3.tar.gz   -C output/   # → output/genes/*.json (optional, enriches /gene/{id})
+echo "GEMINI_EMBEDDING_API_KEY=AIza...your-key..." > .env          # free tier is plenty for queries
+cd tools && python -m flyatlas.cli serve                            # → http://localhost:8765
+```
+
+### Rebuild from scratch (advanced — re-distill or re-embed)
+
+```bash
 cd tools && python -m flyatlas.build       # one-time ETL (~90s)
 python -m flyatlas.embed_build             # one-time Gemini embed (~10min, $1.50)
 python -m flyatlas.cli serve               # → http://localhost:8765
