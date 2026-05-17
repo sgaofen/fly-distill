@@ -64,19 +64,21 @@ def semantic_search(query: str, top_k: int = 20,
                     fbgn_filter: list | None = None) -> list[dict]:
     fbgns, vecs, idxs = _embeddings()
     q = embed_query(query)
-    if fbgn_filter is not None:
-        # Restrict search to a subset (region filter)
-        mask_idx = [idxs[f] for f in fbgn_filter if f in idxs]
-        if not mask_idx:
-            return []
-        sub = vecs[mask_idx]
-        scores = sub @ q
+    # numpy float32 SIMD matmul emits a phantom "divide by zero" RuntimeWarning
+    # on macOS even when inputs are finite; suppress so CLI --json output stays
+    # parseable. Result is identical.
+    with np.errstate(all="ignore"):
+        if fbgn_filter is not None:
+            mask_idx = [idxs[f] for f in fbgn_filter if f in idxs]
+            if not mask_idx:
+                return []
+            sub = vecs[mask_idx]
+            scores = sub @ q
+            order = np.argsort(-scores)[:top_k]
+            return [{"fbgn": fbgns[mask_idx[i]], "score": float(scores[i])} for i in order]
+        scores = vecs @ q
         order = np.argsort(-scores)[:top_k]
-        return [{"fbgn": fbgns[mask_idx[i]], "score": float(scores[i])} for i in order]
-    # Full corpus
-    scores = vecs @ q
-    order = np.argsort(-scores)[:top_k]
-    return [{"fbgn": fbgns[i], "score": float(scores[i])} for i in order]
+        return [{"fbgn": fbgns[i], "score": float(scores[i])} for i in order]
 
 
 _CHR_RE = re.compile(r"Gene sequence location is\s+([0-9A-Za-z]+):(\d+)\.\.(\d+)")
@@ -120,10 +122,18 @@ def ensure_region_columns(db_path: str = str(DB_PATH)):
     return n
 
 
+@lru_cache(maxsize=1)
+def _ensure_region_columns_once(db_path: str = str(DB_PATH)) -> int:
+    """Self-heal: add+populate chr/start/end on first call per process. The flat
+    flyatlas.build schema doesn't include these columns yet, so the first
+    semantic/region query against a fresh atlas.db would otherwise 500."""
+    return ensure_region_columns(db_path)
+
+
 def genes_in_region(chr_: str, start: int, end: int, db_path: str = str(DB_PATH)) -> list[dict]:
+    _ensure_region_columns_once(db_path)
     c = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     c.row_factory = sqlite3.Row
-    # Overlap: any gene whose [start,end] intersects [start,end]
     sql = """
       SELECT fbgn, symbol, chr, start, end, summary, n_bullets
       FROM genes WHERE chr = ? AND end >= ? AND start <= ?
@@ -144,6 +154,7 @@ def parse_region_string(s: str):
 def hybrid_query(region: str | None, query: str, top_k: int = 10) -> dict:
     """region: '2L:5e6-6e6' or None. query: free-text phenotype.
     Returns: {fbgn_in_region, fbgn_ranked} with full per-gene info."""
+    _ensure_region_columns_once()
     out = {"region": region, "query": query}
     fbgn_filter = None
     if region:
