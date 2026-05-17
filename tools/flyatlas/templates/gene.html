@@ -78,23 +78,53 @@
     {% if g.orthologs %}
     <div class="bg-white p-4 rounded border border-stone-200">
       <h3 class="text-xs uppercase text-stone-500 mb-2">cross-species orthologs</h3>
+
       {% set humans = g.orthologs | selectattr("species","equalto","human") | list %}
-      {% set mice = g.orthologs | selectattr("species","equalto","mouse") | list %}
       {% if humans %}
-        <div class="text-sm"><span class="text-stone-500">human:</span>
-          {% for o in humans %}
-            <a href="/browse/ortholog/{{ o.symbol }}" class="text-blue-700 hover:underline">{{ o.symbol }}</a>
-            <span class="text-stone-400 num text-xs">({{ o.diopt_score or '?' }})</span>{% if not loop.last %}, {% endif %}
-          {% endfor %}
-        </div>
+        <div class="text-sm font-semibold text-stone-700 mb-1">human</div>
+        {% for o in humans %}
+          {% set ph = g._human_phenotypes.get(o.symbol) if g._human_phenotypes else [] %}
+          <div class="text-sm mb-2">
+            <a href="/browse/ortholog/{{ o.symbol }}" class="text-blue-700 hover:underline font-medium">{{ o.symbol }}</a>
+            <span class="text-stone-400 num text-xs">DIOPT {{ o.diopt_score or '?' }}</span>
+            {% if ph %}
+              <details class="ml-3 mt-0.5">
+                <summary class="text-xs text-stone-600">HPO phenotypes ({{ ph|length }})</summary>
+                <ul class="ml-4 mt-1 space-y-0.5 text-xs text-stone-700">
+                  {% for p in ph %}
+                    <li><span class="text-stone-800">{{ p.term }}</span>
+                      {% if p.definition %}<span class="text-stone-500"> — {{ p.definition[:200] }}</span>{% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </details>
+            {% endif %}
+          </div>
+        {% endfor %}
       {% endif %}
+
+      {% set mice = g.orthologs | selectattr("species","equalto","mouse") | list %}
       {% if mice %}
-        <div class="text-sm mt-1"><span class="text-stone-500">mouse:</span>
-          {% for o in mice %}
-            <a href="/browse/ortholog/{{ o.symbol }}" class="text-blue-700 hover:underline">{{ o.symbol }}</a>
-            <span class="text-stone-400 num text-xs">({{ o.diopt_score or '?' }})</span>{% if not loop.last %}, {% endif %}
-          {% endfor %}
-        </div>
+        <div class="text-sm font-semibold text-stone-700 mt-3 mb-1">mouse</div>
+        {% for o in mice %}
+          {% set ph = g._mouse_phenotypes.get(o.symbol) if g._mouse_phenotypes else [] %}
+          <div class="text-sm mb-2">
+            <a href="/browse/ortholog/{{ o.symbol }}" class="text-blue-700 hover:underline font-medium">{{ o.symbol }}</a>
+            <span class="text-stone-400 num text-xs">DIOPT {{ o.diopt_score or '?' }}</span>
+            {% if ph %}
+              <details class="ml-3 mt-0.5">
+                <summary class="text-xs text-stone-600">MGI knockout phenotypes ({{ ph|length }})</summary>
+                <ul class="ml-4 mt-1 space-y-0.5 text-xs text-stone-700">
+                  {% for p in ph %}
+                    <li><span class="text-stone-800">{{ p.term }}</span>
+                      {% if p.definition %}<span class="text-stone-500"> — {{ p.definition[:200] }}</span>{% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </details>
+            {% endif %}
+          </div>
+        {% endfor %}
       {% endif %}
     </div>
     {% endif %}
@@ -102,17 +132,28 @@
     {% if g.diseases %}
     <div class="bg-white p-4 rounded border border-stone-200">
       <h3 class="text-xs uppercase text-stone-500 mb-2">human disease links</h3>
-      <ul class="text-sm space-y-1">
+      <ul class="text-sm space-y-2">
         {% for d in g.diseases %}
           {% if d.omim_id %}
-          <li>
-            <a href="/browse/disease/{{ d.omim_id }}" class="text-blue-700 hover:underline">
-              {{ d.name }}
-            </a>
-            <span class="text-xs text-stone-500">
-              OMIM {{ d.omim_id }}{% if d.via_symbol %} · via {{ d.via_species }} {{ d.via_symbol }}{% endif %}
-            </span>
-          </li>
+            {% set hpo = g._disease_hpo.get(d.omim_id) if g._disease_hpo else [] %}
+            <li>
+              <a href="/browse/disease/{{ d.omim_id }}" class="text-blue-700 hover:underline">
+                {{ d.name }}
+              </a>
+              <span class="text-xs text-stone-500">
+                OMIM {{ d.omim_id }}{% if d.via_symbol %} · via {{ d.via_species }} {{ d.via_symbol }}{% endif %}
+              </span>
+              {% if hpo %}
+                <details class="mt-1">
+                  <summary class="text-xs text-stone-600">HPO clinical features ({{ hpo|length }})</summary>
+                  <ul class="ml-4 mt-1 space-y-0.5 text-xs text-stone-700">
+                    {% for t in hpo %}
+                      <li>{{ t.term }} <span class="text-stone-400 text-[10px]">{{ t.hp_id }}</span></li>
+                    {% endfor %}
+                  </ul>
+                </details>
+              {% endif %}
+            </li>
           {% endif %}
         {% endfor %}
       </ul>

@@ -48,6 +48,27 @@ def gene_page(request: Request, ident: str):
     if fbgn != ident.upper() and not ident.startswith("FBgn"):
         return RedirectResponse(f"/gene/{fbgn}", status_code=302)
     g = Q.get_gene(DB, fbgn)
+    # Augment with cross-species enrichment from canonical JSON (mgi/hpo phenotypes
+    # are nested arrays that the SQLite schema doesn't store flatly).
+    import json as _json
+    canon_p = Path(__file__).resolve().parents[2] / "output" / "genes" / f"{fbgn}.json"
+    if canon_p.exists():
+        try:
+            cj = _json.loads(canon_p.read_text())
+            cs = cj.get("cross_species") or {}
+            # Build {sym: phenotype_list} maps so the template can render
+            human_ph = {o.get("symbol"): o.get("hpo_phenotypes") or []
+                        for o in (cs.get("human_orthologs") or [])}
+            mouse_ph = {o.get("symbol"): o.get("mgi_phenotypes") or []
+                        for o in (cs.get("mouse_orthologs") or [])}
+            disease_hpo = {d.get("omim_id"): d.get("hpo_terms") or []
+                           for d in (cs.get("human_disease_links") or [])
+                           if d.get("omim_id")}
+            g["_human_phenotypes"] = human_ph
+            g["_mouse_phenotypes"] = mouse_ph
+            g["_disease_hpo"] = disease_hpo
+        except Exception:
+            pass
     # Group bullets by category for display
     by_cat = {}
     for b in g["bullets"]:
