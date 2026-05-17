@@ -42,21 +42,60 @@ def load_key() -> str:
 
 
 def build_gene_text(c: dict) -> str:
-    """Compose the text we embed: symbol + summary + concatenated bullet
-    phenotypes + evidence + notes. Capped to ~7000 chars to stay well under
-    Gemini's 8192-token input limit."""
-    parts = [c.get("symbol", "")]
-    parts.append(c.get("snapshot") or "")
+    """Compose the text we embed under one fly-gene vector. Mouse/human MGI/HPO
+    text is auxiliary signal attached to the SAME fly vector — never its own
+    entity. Capped to 14000 chars (Gemini limit is 8192 tokens ≈ 30k chars; we
+    leave margin for the tokenizer).
+
+    Budget strategy:
+      1. Fly summary (always kept full)
+      2. Cross-species ortholog context (always kept — this is the new signal
+         we paid for and want guaranteed-present in every vector that has
+         orthologs)
+      3. Fly bullets (truncated last, in case 1+2+3 exceeds budget)
+    """
+    CAP = 14000
+    sym = c.get("symbol", "")
+    head_lines = [f"Drosophila gene: {sym}", c.get("snapshot") or ""]
+
+    # Cross-species block — reserve guaranteed slot at top, so it always ends up in the embed
+    cs = c.get("cross_species") or {}
+    cs_lines: list[str] = []
+    for o in (cs.get("mouse_orthologs") or []):
+        terms = o.get("mgi_phenotypes") or []
+        if not terms: continue
+        cs_lines.append(f"Mouse ortholog {o.get('symbol','?')} (knockout/mutant phenotypes): "
+                        + "; ".join(t["term"] for t in terms[:15]))
+    for o in (cs.get("human_orthologs") or []):
+        terms = o.get("hpo_phenotypes") or []
+        if not terms: continue
+        cs_lines.append(f"Human ortholog {o.get('symbol','?')} (clinical phenotypes): "
+                        + "; ".join(t["term"] for t in terms[:15]))
+    for d in (cs.get("human_disease_links") or []):
+        hp = d.get("hpo_terms") or []
+        if not hp: continue
+        cs_lines.append(f"Disease via ortholog — {d.get('name','?')} (clinical features): "
+                        + "; ".join(t["term"] for t in hp[:8]))
+    cs_block = ("\n── Cross-species ortholog context (verbatim from MGI/HPO) ──\n"
+                + "\n".join(cs_lines)) if cs_lines else ""
+
+    # Reserve budget: head + cs_block consume first, fly bullets take the rest
+    head_text = "\n".join(head_lines).strip()
+    reserved = len(head_text) + len(cs_block)
+    bullets_budget = max(CAP - reserved - 200, 1500)  # at least 1500 chars for bullets
+
+    bullet_lines: list[str] = []
     for b in (c.get("bullets") or []):
         ph = b.get("phenotype") or ""
         ev = (b.get("evidence_text") or "")[:200]
         cat = b.get("category") or ""
-        parts.append(f"[{cat}] {ph}  // {ev}")
-    notes = c.get("notes")
-    if notes:
-        parts.append(f"NOTES: {notes}")
-    txt = "\n".join(p for p in parts if p).strip()
-    return txt[:7000]
+        bullet_lines.append(f"[{cat}] {ph}  // {ev}")
+    bullets_text = "\n".join(bullet_lines)[:bullets_budget]
+    if c.get("notes"):
+        bullets_text += f"\nNOTES: {c['notes'][:300]}"
+
+    full = head_text + "\n" + bullets_text + cs_block
+    return full[:CAP]
 
 
 def embed_one(api_key: str, text: str, retries: int = 4) -> list:
