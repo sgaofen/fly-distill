@@ -10,6 +10,7 @@ import json
 import os
 import re
 import sqlite3
+import threading
 from functools import lru_cache
 from pathlib import Path
 from urllib import request as urlrequest
@@ -122,12 +123,26 @@ def ensure_region_columns(db_path: str = str(DB_PATH)):
     return n
 
 
+_ensure_lock = threading.Lock()
+
+
 @lru_cache(maxsize=1)
 def _ensure_region_columns_once(db_path: str = str(DB_PATH)) -> int:
     """Self-heal: add+populate chr/start/end on first call per process. The flat
     flyatlas.build schema doesn't include these columns yet, so the first
-    semantic/region query against a fresh atlas.db would otherwise 500."""
-    return ensure_region_columns(db_path)
+    semantic/region query against a fresh atlas.db would otherwise 500.
+
+    Lock-guarded so two concurrent FastAPI worker threads can't both race
+    through ALTER TABLE."""
+    with _ensure_lock:
+        # Re-check inside the lock: another thread may have populated while we
+        # waited. PRAGMA is cheap; the heavy work only fires if columns absent.
+        c = sqlite3.connect(db_path)
+        cols = [r[1] for r in c.execute("PRAGMA table_info(genes)")]
+        c.close()
+        if "chr" in cols:
+            return 0
+        return ensure_region_columns(db_path)
 
 
 def genes_in_region(chr_: str, start: int, end: int, db_path: str = str(DB_PATH)) -> list[dict]:

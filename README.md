@@ -1,6 +1,6 @@
 # fly-distill — Drosophila phenotype atlas with semantic search
 
-A structured, source-cited phenotype atlas for **14,019 protein-coding *Drosophila melanogaster* genes**, distilled from FlyBase + Alliance + OMIM via five independent LLM backends with verbatim-quote verification, plus a **Gemini-embedded semantic search layer** over the full corpus. Built as a Long Lab (UCI) flagship project for QTL fine-mapping and disease modeling.
+A structured, source-cited phenotype atlas for **14,019 protein-coding *Drosophila melanogaster* genes**, distilled from FlyBase + Alliance + OMIM via five independent LLM backends with full citation coverage and source-traceable evidence, plus a **Gemini-embedded semantic search layer** over the full corpus. Built as a Long Lab (UCI) flagship project for QTL fine-mapping and disease modeling.
 
 | Metric | Value |
 |---|---|
@@ -10,14 +10,14 @@ A structured, source-cited phenotype atlas for **14,019 protein-coding *Drosophi
 | Cross-species orthologs | **30,000+** human + mouse, DIOPT-scored |
 | OMIM disease links | **5,200+** via ortholog |
 | Semantic embeddings | **14,019 × 3,072 dim** (Gemini `gemini-embedding-2`, 152 MB) |
-| Verbatim-quote verification | **100%** across 200+ hand-audited bullets, 0 hallucination |
+| Source traceability | **0 hallucinations** across 200+ hand-audited bullets; every bullet cites a real FBrf / PMID / DOI |
 
 ---
 
 ## What you get per gene
 
 - **One-paragraph summary** — organism-level effects, mechanism, disease links
-- **Structured phenotype bullets** with category / direction / confidence / verbatim FlyBase or paper-abstract evidence
+- **Structured phenotype bullets** with category / direction / confidence / source-cited FlyBase or paper-abstract evidence
 - **Human + mouse orthologs** (DIOPT-scored, Alliance + FlyBase curated)
 - **OMIM disease links** with `via_ortholog` provenance
 - **Chromosome coordinates** (chr/start/end) for region-based QTL fine-mapping
@@ -179,10 +179,17 @@ The **embedding layer is separate** from distillation: Gemini
 ## Hand-verified across all backends
 
 200+ phenotype bullets hand-audited across 4 backends and 16+ random genes
-spanning 1–500+ pub densities: **100% verbatim quote coverage, 0
-hallucination**. Quote integrity is a hard architectural property of the
-pipeline, not a soft target — the canonicalize step rejects bullets whose
-evidence text isn't a substring of the input.
+spanning 1–500+ pub densities: **0 hallucinations**, every bullet anchored
+to a real FlyBase entry or paper abstract.
+
+The `evidence_text` field on each bullet is a labeled span quoting the
+source (e.g. `FBrf0192338: "Embryos lacking both alleles of the wda gene
+exhibited reduced levels of histone H3 acetylation"`, or `FlyBase
+PHENOTYPES: "viable [Scer\GAL4[Mef2.PR] CG12078[GD5996]]" <FBrf0210226>`).
+LLMs may add the label prefix and normalize quote characters, so the
+field is not always a literal substring of the input bundle — but the
+quoted content is faithful to the source and every cited FBrf / PMID /
+DOI resolves to a real reference.
 
 ---
 
@@ -338,7 +345,7 @@ runs/                       per-batch logs + failures + completed
 - **Disease modeling**: find fly models of a human OMIM disease via `flyatlas disease`
 - **Drug-discovery / target validation**: human target → fly ortholog → known phenotype via `flyatlas ortholog`
 - **Aging / behavior / immunity / metabolism panels**: browse by phenotype category
-- **Comp-bio ML training corpus**: structured, source-cited, verbatim-quote-verified
+- **Comp-bio ML training corpus**: structured, source-cited, FlyBase-anchored
 - **Teaching**: browse / search instead of clicking through FlyBase entry pages
 
 ---
@@ -347,7 +354,7 @@ runs/                       per-batch logs + failures + completed
 
 If you use this atlas in a publication, please cite:
 
-> Stephen Yu, [Long Lab UCI]. fly-distill: a multi-backend LLM-distilled Drosophila phenotype atlas with Gemini-embedded semantic search and verbatim-quote verification. 2026.
+> Stephen Yu, [Long Lab UCI]. fly-distill: a multi-backend LLM-distilled Drosophila phenotype atlas with Gemini-embedded semantic search and full source-citation coverage. 2026.
 
 Upstream data sources should be cited per their own terms:
 **FlyBase** (Öztürk-Çolak et al., 2024), **Alliance of Genome Resources**, **OMIM**, **NCBI PubMed**.

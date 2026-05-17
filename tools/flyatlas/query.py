@@ -29,9 +29,9 @@ def stats(db) -> dict:
     out["by_confidence"] = dict(c.execute(
         "SELECT confidence, COUNT(*) FROM bullets GROUP BY confidence"
     ).fetchall())
-    out["top_tissues"] = c.execute(
+    out["top_tissues"] = [tuple(r) for r in c.execute(
         "SELECT tissue, COUNT(DISTINCT fbgn) FROM tissues GROUP BY tissue ORDER BY 2 DESC LIMIT 15"
-    ).fetchall()
+    ).fetchall()]
     return out
 
 
