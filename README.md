@@ -92,9 +92,12 @@ fly gene chico                       # full detail
 fly search "pupa height"             # semantic search (default)
 fly search "Z disc AND muscle" --keyword   # FTS5 keyword fallback
 fly ask "pupa height" --region 2L:5e6-6e6  # hybrid: region filter ∘ semantic rank
+fly ask "DNA damage" --region X:13.25e6-14.60e6 --release r5  # query in old r5 coords
 fly semantic "alcohol sensitivity"   # pure semantic over full atlas
-fly region 2L:5e6-6e6                # all genes in a chromosome region
-fly regions qtl_peaks.bed            # batch — input BED file
+fly region 2L:5e6-6e6                # all genes in a chromosome region (default r6)
+fly region X:13.25e6-14.60e6 --release r5  # same, but in r5 coordinate space
+fly lift X:13.25e6-14.60e6 --from r5  # lift r5 → r6 (or --from r6 for reverse)
+fly regions qtl_peaks.bed            # batch — input BED file (--release r5 if needed)
 fly export-bed --format bed          # dump all 14k genes' coordinates as BED
 fly disease 254100                   # MDRP fly models
 fly ortholog IRS1                    # fly orthologs of human IRS1
@@ -104,6 +107,7 @@ fly category disease_model           # phenotype-category browse
 fly stats                            # atlas-wide stats
 fly serve                            # launch Web UI
 fly qtl-rank caffeine_D              # rank candidates for one QTL (Long workflow)
+fly qtl-overlap                      # find pairs of QTLs whose intervals overlap
 ```
 
 Each command also accepts `--json` for piping.

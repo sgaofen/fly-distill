@@ -283,6 +283,53 @@ Your 2026-05-19 note flagged this as a possible overlap (Methotrexate-X around 1
 
 **Only runtime dependency:** a Gemini embedding API key (`gemini-embedding-2`) for the query-time semantic vector. All pre-computed gene embeddings, atlas SQL database, and canonical JSON are ship-as-is in the v1.4 release tarballs — no other inference layer is invoked at query time.
 
+### Querying in either coordinate system
+
+The atlas stores both r5 (FB2014_01) and r6 (FB2026_01) coordinates per FBgn, so QTL intervals from either era can be queried in their native space. All CLI and Web UI entry points accept a `--release` flag (default `r6`); the conversion between releases is a per-FBgn join against FlyBase's authoritative `gene_map_table` for each release — there is no chain-file algorithmic interpolation involved.
+
+**CLI**
+
+```bash
+# r6 (default) — native for the newer studies
+python -m flyatlas.cli ask "Adult female longevity on 1% caffeine" \
+    --region 2R:10628099-11168099
+
+# r5 — for the older chemo papers, no need to lift first
+python -m flyatlas.cli ask "DNA damage repair" \
+    --region X:13.25e6-14.60e6 --release r5
+
+# Standalone r5 ↔ r6 coordinate lift for an arbitrary interval
+python -m flyatlas.cli lift X:13.25e6-14.60e6 --from r5
+#   r5 → r6 lift
+#     in  : r5 X:13,250,000-14,600,000  (115 genes)
+#     out : r6 X:13,359,248-14,749,376
+
+# Batch query from a BED file (release applies to ALL rows)
+python -m flyatlas.cli regions qtl_peaks_release5.bed --release r5
+
+# Lookup the genes in a region
+python -m flyatlas.cli region X:13.25e6-14.60e6 --release r5
+```
+
+**Web UI**
+
+The `/ask` page exposes a release dropdown next to the region input. Set it to `r5` to interpret an entered region in the older coordinate space; results show both r5 and r6 coordinates per gene for cross-checking.
+
+The QTL detail pages (`/qtl/<id>`) display both r5 and r6 interval boundaries for any QTL whose source paper reported in r5, so the lifted coordinates are visible alongside the original.
+
+**JSON API**
+
+```bash
+# Genes in an r5 region
+curl 'http://localhost:8765/api/region/X:13.25e6-14.60e6?release=r5'
+
+# Lift an interval r5 → r6
+curl 'http://localhost:8765/api/lift/X:13.25e6-14.60e6?from_release=r5'
+
+# Hybrid semantic + r5 region filter
+curl 'http://localhost:8765/api/semantic?q=DNA+damage&region=X:13.25e6-14.60e6&release=r5'
+```
+
 ---
 
 *Comments, corrections, and counter-evidence welcome.*
