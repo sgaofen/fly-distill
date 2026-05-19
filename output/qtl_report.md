@@ -215,20 +215,20 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Cyp12d1-d` | ✓ STRONG | 0.68 | 0.85 | 19 | 11 | 96 |
-| 2 | `Prosβ5` | ✓ STRONG | 0.66 | 0.91 | 25 | 17 | 135 |
-| 3 | `Cyp12d1-p` | ✓ STRONG | 0.66 | 0.83 | 17 | 9 | 100 |
-| 4 | `shn` | ✓ STRONG | 0.61 | 0.97 | 25 | 24 | 345 |
-| 5 | `stan` | ✓ STRONG | 0.64 | 0.85 | 28 | 3 | 434 |
-| 6 | `CG30016` | ✓ STRONG | 0.65 | 0.78 | 17 | 8 | 32 |
-| 7 | `Daao1` | ✓ STRONG | 0.66 | 0.74 | 18 | 7 | 52 |
-| 8 | `LTV1` | ✓ STRONG | 0.65 | 0.77 | 20 | 5 | 41 |
-| 9 | `Nop10` | ✓ STRONG | 0.64 | 0.77 | 17 | 5 | 50 |
-| 10 | `Rab3` | ✓ STRONG | 0.65 | 0.75 | 25 | 12 | 184 |
-| 11 | `CG11883` | ✓ STRONG | 0.67 | 0.68 | 8 | 4 | 40 |
-| 12 | `Elp2` | ✓ STRONG | 0.65 | 0.73 | 17 | 3 | 47 |
-| 13 | `alka` | ✓ STRONG | 0.62 | 0.81 | 21 | 7 | 64 |
-| 14 | `Pex6` | ✓ STRONG | 0.65 | 0.70 | 10 | 4 | 42 |
+| 1 | `Prosβ5` | ✓ STRONG | 0.66 | 0.91 | 25 | 17 | 135 |
+| 2 | `Cyp12d1-d` | ✓ STRONG | 0.65 | 0.85 | 19 | 11 | 96 |
+| 3 | `shn` | ✓ STRONG | 0.61 | 0.97 | 25 | 24 | 345 |
+| 4 | `Cyp12d1-p` | ✓ STRONG | 0.64 | 0.83 | 17 | 9 | 100 |
+| 5 | `stan` | ✓ STRONG | 0.63 | 0.85 | 28 | 3 | 434 |
+| 6 | `CG30016` | ✓ STRONG | 0.63 | 0.78 | 17 | 8 | 32 |
+| 7 | `LTV1` | ✓ STRONG | 0.63 | 0.77 | 20 | 5 | 41 |
+| 8 | `Daao1` | ✓ STRONG | 0.64 | 0.74 | 18 | 7 | 52 |
+| 9 | `CG11883` | ✓ STRONG | 0.65 | 0.68 | 8 | 4 | 40 |
+| 10 | `Elp2` | ✓ STRONG | 0.63 | 0.73 | 17 | 3 | 47 |
+| 11 | `alka` | ✓ STRONG | 0.61 | 0.81 | 21 | 7 | 64 |
+| 12 | `Rab3` | ✓ STRONG | 0.63 | 0.75 | 25 | 12 | 184 |
+| 13 | `CG33144` | ✓ STRONG | 0.65 | 0.66 | 15 | 11 | 56 |
+| 14 | `polyph` | ✓ STRONG | 0.64 | 0.70 | 12 | 3 | 35 |
 | 15 | `luna` | ✓ STRONG | 0.62 | 0.77 | 21 | 3 | 95 |
 
 ### `caffeine_F` — Caffeine on 3R
@@ -243,21 +243,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `foxo` | ✓ STRONG | 0.66 | 1.00 | 29 | 27 | 906 |
-| 2 | `Dop1R1` | ✓ STRONG | 0.64 | 0.98 | 27 | 29 | 350 |
-| 3 | `Hrb87F` | ✓ STRONG | 0.67 | 0.81 | 20 | 4 | 193 |
-| 4 | `trx` | ✓ STRONG | 0.61 | 0.98 | 32 | 20 | 610 |
-| 5 | `Lkb1` | ✓ STRONG | 0.63 | 0.89 | 28 | 10 | 142 |
-| 6 | `spn-B` | ✓ STRONG | 0.64 | 0.83 | 23 | 6 | 124 |
-| 7 | `MetRS-m` | ✓ STRONG | 0.66 | 0.75 | 15 | 4 | 66 |
-| 8 | `Polr2B` | ✓ STRONG | 0.62 | 0.88 | 17 | 14 | 207 |
-| 9 | `rdx` | ✓ STRONG | 0.64 | 0.82 | 24 | 4 | 154 |
-| 10 | `PK1-R` | ✓ STRONG | 0.65 | 0.76 | 13 | 5 | 81 |
-| 11 | `B52` | ✓ STRONG | 0.65 | 0.77 | 28 | 7 | 181 |
-| 12 | `Cyp6d5` | ✓ STRONG | 0.68 | 0.65 | 9 | 7 | 76 |
-| 13 | `sqd` | ✓ STRONG | 0.62 | 0.84 | 24 | 4 | 288 |
-| 14 | `ems` | ✓ STRONG | 0.60 | 0.90 | 20 | 12 | 324 |
-| 15 | `ninaB` | ✓ STRONG | 0.63 | 0.80 | 15 | 7 | 89 |
+| 1 | `foxo` | ✓ STRONG | 0.65 | 1.00 | 29 | 27 | 906 |
+| 2 | `Dop1R1` | ✓ STRONG | 0.62 | 0.98 | 27 | 29 | 350 |
+| 3 | `trx` | ✓ STRONG | 0.60 | 0.98 | 32 | 20 | 610 |
+| 4 | `Hrb87F` | ✓ STRONG | 0.65 | 0.81 | 20 | 4 | 193 |
+| 5 | `spn-B` | ✓ STRONG | 0.63 | 0.83 | 23 | 6 | 124 |
+| 6 | `Lkb1` | ✓ STRONG | 0.61 | 0.89 | 28 | 10 | 142 |
+| 7 | `MetRS-m` | ✓ STRONG | 0.65 | 0.75 | 15 | 4 | 66 |
+| 8 | `B52` | ✓ STRONG | 0.64 | 0.77 | 28 | 7 | 181 |
+| 9 | `sqd` | ✓ STRONG | 0.62 | 0.84 | 24 | 4 | 288 |
+| 10 | `ninaB` | ✓ STRONG | 0.63 | 0.80 | 15 | 7 | 89 |
+| 11 | `PK1-R` | ✓ STRONG | 0.64 | 0.76 | 13 | 5 | 81 |
+| 12 | `Cyp6d5` | ✓ STRONG | 0.66 | 0.65 | 9 | 7 | 76 |
+| 13 | `Nsf2` | ✓ STRONG | 0.63 | 0.76 | 28 | 6 | 151 |
+| 14 | `Npc2b` | ✓ STRONG | 0.65 | 0.70 | 8 | 4 | 64 |
+| 15 | `Cht5` | ✓ STRONG | 0.64 | 0.73 | 16 | 3 | 57 |
 
 ### `caffeine_G` — Caffeine on 3R
 
@@ -271,21 +271,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Tl` | ✓ STRONG | 0.64 | 1.00 | 31 | 27 | 1090 |
-| 2 | `Nf1` | ✓ STRONG | 0.64 | 0.94 | 27 | 19 | 176 |
-| 3 | `Ets97D` | ✓ STRONG | 0.67 | 0.81 | 23 | 10 | 94 |
-| 4 | `LpR1` | ✓ STRONG | 0.64 | 0.89 | 26 | 13 | 94 |
-| 5 | `LpR2` | ✓ STRONG | 0.66 | 0.82 | 21 | 6 | 110 |
-| 6 | `SPARC` | ✓ STRONG | 0.64 | 0.86 | 26 | 7 | 140 |
-| 7 | `amon` | ✓ STRONG | 0.63 | 0.88 | 24 | 12 | 121 |
-| 8 | `Lnk` | ✓ STRONG | 0.65 | 0.82 | 21 | 6 | 95 |
-| 9 | `Aldo` | ✓ STRONG | 0.64 | 0.84 | 24 | 5 | 199 |
-| 10 | `Yif1` | ✓ STRONG | 0.65 | 0.77 | 15 | 6 | 51 |
-| 11 | `Pdf` | ✓ STRONG | 0.66 | 0.71 | 24 | 20 | 592 |
-| 12 | `CCAP-R` | ✓ STRONG | 0.66 | 0.74 | 10 | 5 | 85 |
-| 13 | `Nil` | ✓ STRONG | 0.67 | 0.69 | 10 | 3 | 50 |
-| 14 | `CG6295` | ✓ STRONG | 0.66 | 0.73 | 11 | 4 | 69 |
-| 15 | `Lerp` | ✓ STRONG | 0.67 | 0.68 | 15 | 1 | 73 |
+| 1 | `Tl` | ✓ STRONG | 0.62 | 1.00 | 31 | 27 | 1090 |
+| 2 | `Nf1` | ✓ STRONG | 0.62 | 0.94 | 27 | 19 | 176 |
+| 3 | `Lnk` | ✓ STRONG | 0.65 | 0.82 | 21 | 6 | 95 |
+| 4 | `Ets97D` | ✓ STRONG | 0.65 | 0.81 | 23 | 10 | 94 |
+| 5 | `LpR1` | ✓ STRONG | 0.62 | 0.89 | 26 | 13 | 94 |
+| 6 | `Aldo` | ✓ STRONG | 0.63 | 0.84 | 24 | 5 | 199 |
+| 7 | `amon` | ✓ STRONG | 0.62 | 0.88 | 24 | 12 | 121 |
+| 8 | `LpR2` | ✓ STRONG | 0.64 | 0.82 | 21 | 6 | 110 |
+| 9 | `SPARC` | ✓ STRONG | 0.62 | 0.86 | 26 | 7 | 140 |
+| 10 | `CG6295` | ✓ STRONG | 0.66 | 0.73 | 11 | 4 | 69 |
+| 11 | `fid` | ✓ STRONG | 0.65 | 0.74 | 15 | 5 | 32 |
+| 12 | `Pdf` | ✓ STRONG | 0.66 | 0.71 | 24 | 20 | 592 |
+| 13 | `Nil` | ✓ STRONG | 0.66 | 0.69 | 10 | 3 | 50 |
+| 14 | `Lerp` | ✓ STRONG | 0.66 | 0.68 | 15 | 1 | 73 |
+| 15 | `Yif1` | ✓ STRONG | 0.64 | 0.77 | 15 | 6 | 51 |
 
 ### `caffeine_A` — Caffeine on X
 
@@ -299,21 +299,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Myc` | ✓ STRONG | 0.64 | 1.00 | 29 | 32 | 842 |
-| 2 | `bi` | ✓ STRONG | 0.63 | 0.98 | 28 | 23 | 445 |
-| 3 | `Pde4` | ✓ STRONG | 0.63 | 1.00 | 29 | 43 | 608 |
-| 4 | `mei-9` | ✓ STRONG | 0.67 | 0.86 | 29 | 5 | 222 |
+| 1 | `Pde4` | ✓ STRONG | 0.62 | 1.00 | 29 | 43 | 608 |
+| 2 | `mei-9` | ✓ STRONG | 0.66 | 0.86 | 29 | 5 | 222 |
+| 3 | `bi` | ✓ STRONG | 0.62 | 0.98 | 28 | 23 | 445 |
+| 4 | `Myc` | ✓ STRONG | 0.61 | 1.00 | 29 | 32 | 842 |
 | 5 | `Torsin` | ✓ STRONG | 0.66 | 0.83 | 22 | 8 | 74 |
-| 6 | `Tip60` | ✓ STRONG | 0.62 | 0.96 | 29 | 26 | 141 |
-| 7 | `norpA` | ✓ STRONG | 0.63 | 0.91 | 33 | 7 | 705 |
-| 8 | `fzr` | ✓ STRONG | 0.63 | 0.91 | 20 | 17 | 236 |
-| 9 | `rb` | ✓ STRONG | 0.65 | 0.85 | 20 | 9 | 136 |
-| 10 | `Vap33` | ✓ STRONG | 0.64 | 0.85 | 30 | 5 | 169 |
-| 11 | `Pdha1` | ✓ STRONG | 0.65 | 0.81 | 26 | 4 | 109 |
-| 12 | `Tlk` | ✓ STRONG | 0.62 | 0.91 | 28 | 13 | 154 |
-| 13 | `CG3527` | ✓ STRONG | 0.67 | 0.75 | 10 | 8 | 43 |
-| 14 | `rst` | ✓ STRONG | 0.62 | 0.91 | 21 | 13 | 317 |
-| 15 | `Xpac` | ✓ STRONG | 0.66 | 0.76 | 12 | 7 | 50 |
+| 6 | `fzr` | ✓ STRONG | 0.62 | 0.91 | 20 | 17 | 236 |
+| 7 | `Pdha1` | ✓ STRONG | 0.65 | 0.81 | 26 | 4 | 109 |
+| 8 | `norpA` | ✓ STRONG | 0.61 | 0.91 | 33 | 7 | 705 |
+| 9 | `CG3527` | ✓ STRONG | 0.66 | 0.75 | 10 | 8 | 43 |
+| 10 | `Xpac` | ✓ STRONG | 0.65 | 0.76 | 12 | 7 | 50 |
+| 11 | `Vap33` | ✓ STRONG | 0.62 | 0.85 | 30 | 5 | 169 |
+| 12 | `Tip60` | ✓ STRONG | 0.59 | 0.96 | 29 | 26 | 141 |
+| 13 | `Parg` | ✓ STRONG | 0.66 | 0.73 | 29 | 11 | 77 |
+| 14 | `rst` | ✓ STRONG | 0.60 | 0.91 | 21 | 13 | 317 |
+| 15 | `rb` | ✓ STRONG | 0.62 | 0.85 | 20 | 9 | 136 |
 
 ### `caffeine_E` — Caffeine on 3L
 
@@ -327,21 +327,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `dlp` | ✓ STRONG | 0.64 | 0.99 | 30 | 24 | 359 |
-| 2 | `bmm` | ✓ STRONG | 0.65 | 0.96 | 36 | 20 | 278 |
-| 3 | `DCTN1-p150` | ✓ STRONG | 0.64 | 0.98 | 38 | 25 | 309 |
-| 4 | `fz` | ✓ STRONG | 0.62 | 0.98 | 26 | 23 | 916 |
-| 5 | `CrebA` | ✓ STRONG | 0.64 | 0.93 | 25 | 15 | 267 |
-| 6 | `Adk2` | ✓ STRONG | 0.69 | 0.75 | 13 | 5 | 65 |
-| 7 | `Prosβ2` | ✓ STRONG | 0.65 | 0.88 | 24 | 10 | 152 |
-| 8 | `D` | ✓ STRONG | 0.63 | 0.96 | 24 | 22 | 312 |
-| 9 | `Pgm1` | ✓ STRONG | 0.64 | 0.92 | 24 | 17 | 165 |
-| 10 | `Diap1` | ✓ STRONG | 0.64 | 0.90 | 35 | 6 | 1205 |
-| 11 | `Pdi` | ✓ STRONG | 0.65 | 0.85 | 13 | 14 | 147 |
-| 12 | `Plp` | ✓ STRONG | 0.64 | 0.86 | 26 | 6 | 225 |
-| 13 | `Vps13D` | ✓ STRONG | 0.65 | 0.84 | 28 | 8 | 56 |
-| 14 | `Klc` | ✓ STRONG | 0.62 | 0.94 | 26 | 21 | 187 |
-| 15 | `Ctps` | ✓ STRONG | 0.62 | 0.92 | 29 | 16 | 129 |
+| 1 | `DCTN1-p150` | ✓ STRONG | 0.64 | 0.98 | 38 | 25 | 309 |
+| 2 | `dlp` | ✓ STRONG | 0.62 | 0.99 | 30 | 24 | 359 |
+| 3 | `Adk2` | ✓ STRONG | 0.68 | 0.75 | 13 | 5 | 65 |
+| 4 | `bmm` | ✓ STRONG | 0.62 | 0.96 | 36 | 20 | 278 |
+| 5 | `CrebA` | ✓ STRONG | 0.63 | 0.93 | 25 | 15 | 267 |
+| 6 | `Pdi` | ✓ STRONG | 0.64 | 0.85 | 13 | 14 | 147 |
+| 7 | `Prosβ2` | ✓ STRONG | 0.63 | 0.88 | 24 | 10 | 152 |
+| 8 | `Diap1` | ✓ STRONG | 0.63 | 0.90 | 35 | 6 | 1205 |
+| 9 | `D` | ✓ STRONG | 0.61 | 0.96 | 24 | 22 | 312 |
+| 10 | `Plp` | ✓ STRONG | 0.63 | 0.86 | 26 | 6 | 225 |
+| 11 | `fz` | ✓ STRONG | 0.60 | 0.98 | 26 | 23 | 916 |
+| 12 | `ind` | ✓ STRONG | 0.62 | 0.90 | 20 | 16 | 175 |
+| 13 | `mib1` | ✓ STRONG | 0.62 | 0.89 | 25 | 13 | 112 |
+| 14 | `sti` | ✓ STRONG | 0.62 | 0.88 | 25 | 11 | 129 |
+| 15 | `Otud6` | ✓ STRONG | 0.67 | 0.72 | 16 | 3 | 40 |
 
 ### `caffeine_B` — Caffeine on 2L
 
@@ -355,21 +355,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `for` | ✓ STRONG | 0.65 | 0.97 | 26 | 25 | 327 |
-| 2 | `ft` | ✓ STRONG | 0.63 | 0.98 | 26 | 23 | 517 |
-| 3 | `capu` | ✓ STRONG | 0.66 | 0.87 | 25 | 7 | 265 |
-| 4 | `Tdp1` | ✓ STRONG | 0.66 | 0.80 | 20 | 6 | 56 |
-| 5 | `Sec5` | ✓ STRONG | 0.64 | 0.86 | 20 | 10 | 152 |
-| 6 | `tim` | ✓ STRONG | 0.66 | 0.80 | 29 | 6 | 986 |
-| 7 | `Mad` | ✓ STRONG | 0.62 | 0.91 | 30 | 7 | 1207 |
-| 8 | `Shaw` | ✓ STRONG | 0.63 | 0.87 | 29 | 8 | 127 |
-| 9 | `Thor` | ✓ STRONG | 0.65 | 0.80 | 39 | 12 | 670 |
-| 10 | `slp1` | ✓ STRONG | 0.61 | 0.94 | 23 | 16 | 393 |
-| 11 | `Cog3` | ✓ STRONG | 0.65 | 0.78 | 14 | 8 | 47 |
-| 12 | `IFT57` | ✓ STRONG | 0.66 | 0.76 | 11 | 9 | 38 |
-| 13 | `Fign` | ✓ STRONG | 0.66 | 0.73 | 9 | 7 | 41 |
-| 14 | `LeuRS` | ✓ STRONG | 0.65 | 0.76 | 11 | 7 | 62 |
-| 15 | `msl-2` | ✓ STRONG | 0.66 | 0.72 | 16 | 4 | 496 |
+| 1 | `for` | ✓ STRONG | 0.63 | 0.97 | 26 | 25 | 327 |
+| 2 | `ft` | ✓ STRONG | 0.62 | 0.98 | 26 | 23 | 517 |
+| 3 | `capu` | ✓ STRONG | 0.64 | 0.87 | 25 | 7 | 265 |
+| 4 | `tim` | ✓ STRONG | 0.66 | 0.80 | 29 | 6 | 986 |
+| 5 | `Thor` | ✓ STRONG | 0.65 | 0.80 | 39 | 12 | 670 |
+| 6 | `Mad` | ✓ STRONG | 0.62 | 0.91 | 30 | 7 | 1207 |
+| 7 | `Sec5` | ✓ STRONG | 0.63 | 0.86 | 20 | 10 | 152 |
+| 8 | `Cog3` | ✓ STRONG | 0.65 | 0.78 | 14 | 8 | 47 |
+| 9 | `ed` | ✓ STRONG | 0.62 | 0.86 | 32 | 19 | 251 |
+| 10 | `Tdp1` | ✓ STRONG | 0.64 | 0.80 | 20 | 6 | 56 |
+| 11 | `slp1` | ✓ STRONG | 0.60 | 0.94 | 23 | 16 | 393 |
+| 12 | `IFT57` | ✓ STRONG | 0.65 | 0.76 | 11 | 9 | 38 |
+| 13 | `FASN1` | ✓ STRONG | 0.65 | 0.75 | 26 | 10 | 239 |
+| 14 | `Fign` | ✓ STRONG | 0.65 | 0.73 | 9 | 7 | 41 |
+| 15 | `msl-2` | ✓ STRONG | 0.65 | 0.72 | 16 | 4 | 496 |
 
 ### `caffeine_C` — Caffeine on 2L
 
@@ -383,21 +383,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Ca-beta` | ✓ STRONG | 0.66 | 0.89 | 25 | 13 | 100 |
-| 2 | `mre11` | ✓ STRONG | 0.66 | 0.86 | 24 | 9 | 124 |
-| 3 | `Pex19` | ✓ STRONG | 0.66 | 0.86 | 29 | 9 | 65 |
-| 4 | `Nos` | ✓ STRONG | 0.63 | 0.96 | 32 | 21 | 204 |
-| 5 | `Nup154` | ✓ STRONG | 0.65 | 0.86 | 21 | 11 | 114 |
-| 6 | `SCAR` | ✓ STRONG | 0.63 | 0.91 | 31 | 9 | 269 |
-| 7 | `Hgd` | ✓ STRONG | 0.69 | 0.71 | 11 | 3 | 64 |
-| 8 | `esc` | ✓ STRONG | 0.65 | 0.84 | 28 | 3 | 386 |
-| 9 | `Nup107` | ✓ STRONG | 0.66 | 0.81 | 24 | 4 | 122 |
-| 10 | `cmet` | ✓ STRONG | 0.64 | 0.85 | 22 | 8 | 121 |
-| 11 | `prd` | ✓ STRONG | 0.61 | 0.94 | 22 | 18 | 429 |
-| 12 | `Nup160` | ✓ STRONG | 0.63 | 0.86 | 26 | 9 | 86 |
-| 13 | `salm` | ✓ STRONG | 0.61 | 0.93 | 32 | 9 | 655 |
-| 14 | `salr` | ✓ STRONG | 0.61 | 0.94 | 30 | 17 | 176 |
-| 15 | `Ced-12` | ✓ STRONG | 0.62 | 0.89 | 28 | 11 | 137 |
+| 1 | `Ca-beta` | ✓ STRONG | 0.65 | 0.89 | 25 | 13 | 100 |
+| 2 | `mre11` | ✓ STRONG | 0.64 | 0.86 | 24 | 9 | 124 |
+| 3 | `Pex19` | ✓ STRONG | 0.64 | 0.86 | 29 | 9 | 65 |
+| 4 | `Hgd` | ✓ STRONG | 0.68 | 0.71 | 11 | 3 | 64 |
+| 5 | `Nup154` | ✓ STRONG | 0.63 | 0.86 | 21 | 11 | 114 |
+| 6 | `Nup107` | ✓ STRONG | 0.65 | 0.81 | 24 | 4 | 122 |
+| 7 | `esc` | ✓ STRONG | 0.63 | 0.84 | 28 | 3 | 386 |
+| 8 | `cmet` | ✓ STRONG | 0.63 | 0.85 | 22 | 8 | 121 |
+| 9 | `Nup160` | ✓ STRONG | 0.63 | 0.86 | 26 | 9 | 86 |
+| 10 | `Nos` | ✓ STRONG | 0.59 | 0.96 | 32 | 21 | 204 |
+| 11 | `SCAR` | ✓ STRONG | 0.61 | 0.91 | 31 | 9 | 269 |
+| 12 | `prd` | ✓ STRONG | 0.60 | 0.94 | 22 | 18 | 429 |
+| 13 | `salm` | ✓ STRONG | 0.60 | 0.93 | 32 | 9 | 655 |
+| 14 | `Phgdh` | ✓ STRONG | 0.64 | 0.78 | 12 | 8 | 73 |
+| 15 | `salr` | ✓ STRONG | 0.59 | 0.94 | 30 | 17 | 176 |
 
 ### `malathion_A` — Malathion on 2R
 
@@ -406,25 +406,25 @@ Ordered by genome release (r6-native first), then by significance.
 - **Interval (r6)**: `2R:10,966,645–13,213,848` (2.25 Mb)  
 - **Source**: [PMC9713458](https://pmc.ncbi.nlm.nih.gov/articles/PMC9713458/)  
 - **Total genes in interval**: 343  
-- **Quadrants**: ✓ STRONG **188** · ⚠ NOVEL_LEAD **154** · ✗ LIKELY_NOT **1** · ? CANT_RULE_OUT **0**
+- **Quadrants**: ✓ STRONG **184** · ⚠ NOVEL_LEAD **153** · ✗ LIKELY_NOT **5** · ? CANT_RULE_OUT **1**
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Sin3A` | ✓ STRONG | 0.59 | 0.98 | 34 | 26 | 241 |
-| 2 | `eEF1alpha1` | ✓ STRONG | 0.61 | 0.88 | 23 | 9 | 207 |
-| 3 | `shn` | ✓ STRONG | 0.58 | 0.97 | 25 | 24 | 345 |
-| 4 | `Psc` | ✓ STRONG | 0.59 | 0.95 | 18 | 22 | 470 |
-| 5 | `Iswi` | ✓ STRONG | 0.58 | 0.98 | 28 | 22 | 387 |
-| 6 | `Cyp12d1-d` | ✓ STRONG | 0.61 | 0.85 | 19 | 11 | 96 |
-| 7 | `Amph` | ✓ STRONG | 0.58 | 0.95 | 28 | 22 | 164 |
-| 8 | `Fpps` | ✓ STRONG | 0.62 | 0.81 | 16 | 9 | 71 |
-| 9 | `Mdr49` | ✓ STRONG | 0.60 | 0.87 | 22 | 12 | 106 |
-| 10 | `Drep1` | ✓ STRONG | 0.61 | 0.82 | 20 | 8 | 70 |
-| 11 | `Drip` | ✓ STRONG | 0.62 | 0.81 | 20 | 6 | 100 |
-| 12 | `dare` | ✓ STRONG | 0.61 | 0.84 | 25 | 8 | 70 |
-| 13 | `Taz` | ✓ STRONG | 0.59 | 0.88 | 28 | 11 | 84 |
-| 14 | `Sod3` | ✓ STRONG | 0.61 | 0.81 | 15 | 9 | 85 |
-| 15 | `fra` | ✓ STRONG | 0.57 | 0.96 | 25 | 23 | 285 |
+| 1 | `Iswi` | ✓ STRONG | 0.57 | 0.98 | 28 | 22 | 387 |
+| 2 | `shn` | ✓ STRONG | 0.57 | 0.97 | 25 | 24 | 345 |
+| 3 | `Amph` | ✓ STRONG | 0.57 | 0.95 | 28 | 22 | 164 |
+| 4 | `Taz` | ✓ STRONG | 0.59 | 0.88 | 28 | 11 | 84 |
+| 5 | `Psc` | ✓ STRONG | 0.57 | 0.95 | 18 | 22 | 470 |
+| 6 | `Drep1` | ✓ STRONG | 0.60 | 0.82 | 20 | 8 | 70 |
+| 7 | `dare` | ✓ STRONG | 0.60 | 0.84 | 25 | 8 | 70 |
+| 8 | `Buffy` | ✓ STRONG | 0.62 | 0.76 | 29 | 13 | 139 |
+| 9 | `en` | ✓ STRONG | 0.57 | 0.92 | 30 | 8 | 2070 |
+| 10 | `Sin3A` | ✓ STRONG | 0.55 | 0.98 | 34 | 26 | 241 |
+| 11 | `wal` | ✓ STRONG | 0.60 | 0.81 | 16 | 7 | 104 |
+| 12 | `otk` | ✓ STRONG | 0.58 | 0.87 | 19 | 12 | 137 |
+| 13 | `Cyp12d1-p` | ✓ STRONG | 0.59 | 0.83 | 17 | 9 | 100 |
+| 14 | `eEF1alpha1` | ✓ STRONG | 0.58 | 0.88 | 23 | 9 | 207 |
+| 15 | `fra` | ✓ STRONG | 0.55 | 0.96 | 25 | 23 | 285 |
 
 ### `malathion_B` — Malathion on 3L
 
@@ -433,25 +433,25 @@ Ordered by genome release (r6-native first), then by significance.
 - **Interval (r6)**: `3L:5,515,636–6,735,645` (1.22 Mb)  
 - **Source**: [PMC9713458](https://pmc.ncbi.nlm.nih.gov/articles/PMC9713458/)  
 - **Total genes in interval**: 144  
-- **Quadrants**: ✓ STRONG **75** · ⚠ NOVEL_LEAD **69** · ✗ LIKELY_NOT **0** · ? CANT_RULE_OUT **0**
+- **Quadrants**: ✓ STRONG **73** · ⚠ NOVEL_LEAD **69** · ✗ LIKELY_NOT **2** · ? CANT_RULE_OUT **0**
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `ple` | ✓ STRONG | 0.60 | 0.92 | 31 | 8 | 559 |
-| 2 | `Ldh` | ✓ STRONG | 0.60 | 0.91 | 31 | 10 | 267 |
-| 3 | `LanA` | ✓ STRONG | 0.59 | 0.93 | 30 | 12 | 326 |
-| 4 | `ScsβG` | ✓ STRONG | 0.63 | 0.78 | 13 | 7 | 76 |
-| 5 | `spo` | ✓ STRONG | 0.59 | 0.89 | 27 | 13 | 101 |
-| 6 | `Alp9` | ✓ STRONG | 0.64 | 0.70 | 9 | 4 | 53 |
-| 7 | `Usp47` | ✓ STRONG | 0.59 | 0.86 | 23 | 10 | 108 |
-| 8 | `DnaJ-1` | ✓ STRONG | 0.56 | 0.94 | 23 | 24 | 180 |
-| 9 | `Tektin-C` | ✓ STRONG | 0.63 | 0.71 | 9 | 5 | 47 |
-| 10 | `Mdr65` | ✓ STRONG | 0.60 | 0.81 | 12 | 10 | 102 |
-| 11 | `PXo` | ✓ STRONG | 0.61 | 0.76 | 14 | 6 | 40 |
-| 12 | `Myt1` | ✓ STRONG | 0.59 | 0.85 | 24 | 8 | 93 |
-| 13 | `MCU` | ✓ STRONG | 0.63 | 0.70 | 26 | 8 | 90 |
-| 14 | `S6k` | ✓ STRONG | 0.57 | 0.89 | 28 | 41 | 654 |
-| 15 | `Ppat-Dpck` | ✓ STRONG | 0.60 | 0.76 | 25 | 3 | 44 |
+| 1 | `ple` | ✓ STRONG | 0.59 | 0.92 | 31 | 8 | 559 |
+| 2 | `Ldh` | ✓ STRONG | 0.59 | 0.91 | 31 | 10 | 267 |
+| 3 | `ScsβG` | ✓ STRONG | 0.62 | 0.78 | 13 | 7 | 76 |
+| 4 | `spo` | ✓ STRONG | 0.58 | 0.89 | 27 | 13 | 101 |
+| 5 | `Alp9` | ✓ STRONG | 0.63 | 0.70 | 9 | 4 | 53 |
+| 6 | `PXo` | ✓ STRONG | 0.61 | 0.76 | 14 | 6 | 40 |
+| 7 | `sfl` | ✓ STRONG | 0.56 | 0.91 | 33 | 11 | 202 |
+| 8 | `Usp47` | ✓ STRONG | 0.58 | 0.86 | 23 | 10 | 108 |
+| 9 | `DnaJ-1` | ✓ STRONG | 0.55 | 0.94 | 23 | 24 | 180 |
+| 10 | `S6k` | ✓ STRONG | 0.56 | 0.89 | 28 | 41 | 654 |
+| 11 | `Ppat-Dpck` | ✓ STRONG | 0.60 | 0.76 | 25 | 3 | 44 |
+| 12 | `Tektin-C` | ✓ STRONG | 0.61 | 0.71 | 9 | 5 | 47 |
+| 13 | `Mdr65` | ✓ STRONG | 0.58 | 0.81 | 12 | 10 | 102 |
+| 14 | `Myt1` | ✓ STRONG | 0.57 | 0.85 | 24 | 8 | 93 |
+| 15 | `sif` | ✓ STRONG | 0.56 | 0.86 | 27 | 7 | 144 |
 
 ### `zinc_A` — Zinc on X
 
@@ -463,21 +463,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Clic` | ✓ STRONG | 0.62 | 0.88 | 24 | 14 | 82 |
+| 1 | `Clic` | ✓ STRONG | 0.61 | 0.88 | 24 | 14 | 82 |
 | 2 | `Nup93-1` | ✓ STRONG | 0.67 | 0.68 | 14 | 1 | 72 |
-| 3 | `AMPdeam` | ✓ STRONG | 0.64 | 0.73 | 10 | 5 | 68 |
-| 4 | `inaE` | ✓ STRONG | 0.64 | 0.72 | 23 | 7 | 68 |
-| 5 | `ben` | ✓ STRONG | 0.61 | 0.79 | 26 | 21 | 171 |
-| 6 | `jub` | ✓ STRONG | 0.62 | 0.71 | 22 | 10 | 115 |
-| 7 | `mamo` | ✓ STRONG | 0.63 | 0.63 | 27 | 10 | 121 |
-| 8 | `Galml2` | ✓ STRONG | 0.64 | 0.58 | 7 | 5 | 32 |
-| 9 | `Dmel\Ste12DOR` | ✓ STRONG | 0.63 | 0.57 | 9 | 3 | 30 |
-| 10 | `Ste:CG33247` | ✓ STRONG | 0.63 | 0.52 | 8 | 2 | 19 |
-| 11 | `Dmel\Ste:CG33236` | ✓ STRONG | 0.63 | 0.53 | 8 | 2 | 22 |
-| 12 | `Ste:CG33241` | ⚠ NOVEL_LEAD | 0.63 | 0.48 | 8 | 1 | 15 |
-| 13 | `Ste:CG33239` | ⚠ NOVEL_LEAD | 0.63 | 0.47 | 7 | 1 | 15 |
-| 14 | `Ste:CG33242` | ⚠ NOVEL_LEAD | 0.64 | 0.46 | 6 | 1 | 15 |
-| 15 | `Ste:CG33237` | ⚠ NOVEL_LEAD | 0.63 | 0.48 | 7 | 1 | 18 |
+| 3 | `inaE` | ✓ STRONG | 0.63 | 0.72 | 23 | 7 | 68 |
+| 4 | `AMPdeam` | ✓ STRONG | 0.63 | 0.73 | 10 | 5 | 68 |
+| 5 | `ben` | ✓ STRONG | 0.59 | 0.79 | 26 | 21 | 171 |
+| 6 | `jub` | ✓ STRONG | 0.61 | 0.71 | 22 | 10 | 115 |
+| 7 | `mamo` | ✓ STRONG | 0.62 | 0.63 | 27 | 10 | 121 |
+| 8 | `Galml2` | ✓ STRONG | 0.63 | 0.58 | 7 | 5 | 32 |
+| 9 | `Dmel\Ste12DOR` | ✓ STRONG | 0.61 | 0.57 | 9 | 3 | 30 |
+| 10 | `Ste:CG33247` | ✓ STRONG | 0.62 | 0.52 | 8 | 2 | 19 |
+| 11 | `Dmel\Ste:CG33236` | ✓ STRONG | 0.61 | 0.53 | 8 | 2 | 22 |
+| 12 | `Ste:CG33242` | ⚠ NOVEL_LEAD | 0.64 | 0.46 | 6 | 1 | 15 |
+| 13 | `Ste:CG33240` | ⚠ NOVEL_LEAD | 0.63 | 0.46 | 6 | 1 | 16 |
+| 14 | `Dmel\Ste:CG33245` | ⚠ NOVEL_LEAD | 0.63 | 0.46 | 6 | 1 | 14 |
+| 15 | `Ste:CG33241` | ⚠ NOVEL_LEAD | 0.62 | 0.48 | 8 | 1 | 15 |
 
 ### `zinc_B` — Zinc on 2L
 
@@ -489,21 +489,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Hmgcl` | ✓ STRONG | 0.67 | 0.78 | 16 | 6 | 55 |
-| 2 | `milt` | ✓ STRONG | 0.62 | 0.94 | 30 | 20 | 149 |
-| 3 | `Wee1` | ✓ STRONG | 0.62 | 0.90 | 30 | 10 | 157 |
-| 4 | `MICU1` | ✓ STRONG | 0.65 | 0.79 | 20 | 6 | 51 |
-| 5 | `wg` | ✓ STRONG | 0.60 | 0.94 | 35 | 11 | 3617 |
-| 6 | `Mnn1` | ✓ STRONG | 0.62 | 0.86 | 29 | 7 | 104 |
-| 7 | `Ndae1` | ✓ STRONG | 0.62 | 0.83 | 17 | 10 | 95 |
-| 8 | `ihog` | ✓ STRONG | 0.63 | 0.80 | 18 | 5 | 118 |
-| 9 | `nop5` | ✓ STRONG | 0.66 | 0.69 | 11 | 2 | 83 |
-| 10 | `SA1` | ✓ STRONG | 0.60 | 0.86 | 24 | 9 | 108 |
-| 11 | `MME1` | ✓ STRONG | 0.67 | 0.65 | 7 | 2 | 56 |
-| 12 | `mEFG1` | ✓ STRONG | 0.65 | 0.71 | 15 | 2 | 56 |
-| 13 | `Wnt4` | ✓ STRONG | 0.58 | 0.92 | 22 | 16 | 240 |
-| 14 | `Nlg2` | ✓ STRONG | 0.61 | 0.84 | 26 | 7 | 85 |
-| 15 | `Rca1` | ✓ STRONG | 0.60 | 0.85 | 19 | 10 | 126 |
+| 1 | `Hmgcl` | ✓ STRONG | 0.65 | 0.78 | 16 | 6 | 55 |
+| 2 | `Wee1` | ✓ STRONG | 0.62 | 0.90 | 30 | 10 | 157 |
+| 3 | `milt` | ✓ STRONG | 0.59 | 0.94 | 30 | 20 | 149 |
+| 4 | `wg` | ✓ STRONG | 0.59 | 0.94 | 35 | 11 | 3617 |
+| 5 | `MICU1` | ✓ STRONG | 0.63 | 0.79 | 20 | 6 | 51 |
+| 6 | `ihog` | ✓ STRONG | 0.63 | 0.80 | 18 | 5 | 118 |
+| 7 | `nop5` | ✓ STRONG | 0.66 | 0.69 | 11 | 2 | 83 |
+| 8 | `MME1` | ✓ STRONG | 0.67 | 0.65 | 7 | 2 | 56 |
+| 9 | `Gas41` | ✓ STRONG | 0.62 | 0.77 | 25 | 3 | 52 |
+| 10 | `Nlg2` | ✓ STRONG | 0.60 | 0.84 | 26 | 7 | 85 |
+| 11 | `Mnn1` | ✓ STRONG | 0.60 | 0.86 | 29 | 7 | 104 |
+| 12 | `mEFG1` | ✓ STRONG | 0.64 | 0.71 | 15 | 2 | 56 |
+| 13 | `Wnt4` | ✓ STRONG | 0.57 | 0.92 | 22 | 16 | 240 |
+| 14 | `snRNP-U1-70K` | ✓ STRONG | 0.64 | 0.68 | 14 | 10 | 135 |
+| 15 | `Rca1` | ✓ STRONG | 0.59 | 0.85 | 19 | 10 | 126 |
 
 ### `zinc_C` — Zinc on 2R
 
@@ -515,21 +515,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Zasp52` | ✓ STRONG | 0.64 | 0.87 | 28 | 7 | 170 |
-| 2 | `Trpm` | ✓ STRONG | 0.64 | 0.86 | 28 | 7 | 131 |
-| 3 | `Arf6` | ✓ STRONG | 0.63 | 0.87 | 21 | 12 | 134 |
-| 4 | `Hr51` | ✓ STRONG | 0.62 | 0.89 | 31 | 12 | 82 |
-| 5 | `Xpc` | ✓ STRONG | 0.67 | 0.73 | 10 | 4 | 93 |
-| 6 | `Stacl` | ✓ STRONG | 0.65 | 0.76 | 21 | 3 | 70 |
-| 7 | `SRPK` | ✓ STRONG | 0.63 | 0.82 | 26 | 5 | 97 |
-| 8 | `Poxn` | ✓ STRONG | 0.62 | 0.86 | 29 | 21 | 230 |
-| 9 | `Cdk5` | ✓ STRONG | 0.61 | 0.90 | 23 | 16 | 127 |
-| 10 | `dup` | ✓ STRONG | 0.61 | 0.87 | 26 | 8 | 168 |
-| 11 | `Gpo1` | ✓ STRONG | 0.63 | 0.80 | 15 | 7 | 96 |
-| 12 | `fus` | ✓ STRONG | 0.64 | 0.75 | 18 | 3 | 78 |
-| 13 | `Pgant1` | ✓ STRONG | 0.65 | 0.68 | 12 | 9 | 59 |
-| 14 | `row` | ✓ STRONG | 0.65 | 0.69 | 15 | 1 | 86 |
-| 15 | `Khc-73` | ✓ STRONG | 0.59 | 0.87 | 23 | 11 | 118 |
+| 1 | `Xpc` | ✓ STRONG | 0.66 | 0.73 | 10 | 4 | 93 |
+| 2 | `dup` | ✓ STRONG | 0.61 | 0.87 | 26 | 8 | 168 |
+| 3 | `Zasp52` | ✓ STRONG | 0.61 | 0.87 | 28 | 7 | 170 |
+| 4 | `Arf6` | ✓ STRONG | 0.61 | 0.87 | 21 | 12 | 134 |
+| 5 | `SRPK` | ✓ STRONG | 0.63 | 0.82 | 26 | 5 | 97 |
+| 6 | `Stacl` | ✓ STRONG | 0.64 | 0.76 | 21 | 3 | 70 |
+| 7 | `fus` | ✓ STRONG | 0.64 | 0.75 | 18 | 3 | 78 |
+| 8 | `Hr51` | ✓ STRONG | 0.60 | 0.89 | 31 | 12 | 82 |
+| 9 | `Gpo1` | ✓ STRONG | 0.62 | 0.80 | 15 | 7 | 96 |
+| 10 | `Poxn` | ✓ STRONG | 0.60 | 0.86 | 29 | 21 | 230 |
+| 11 | `Trpm` | ✓ STRONG | 0.60 | 0.86 | 28 | 7 | 131 |
+| 12 | `row` | ✓ STRONG | 0.64 | 0.69 | 15 | 1 | 86 |
+| 13 | `Pgant1` | ✓ STRONG | 0.64 | 0.68 | 12 | 9 | 59 |
+| 14 | `Cdk5` | ✓ STRONG | 0.57 | 0.90 | 23 | 16 | 127 |
+| 15 | `unc-5` | ✓ STRONG | 0.62 | 0.75 | 27 | 12 | 140 |
 
 ### `zinc_D` — Zinc on 3L
 
@@ -541,21 +541,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Rdl` | ✓ STRONG | 0.64 | 0.96 | 21 | 22 | 420 |
-| 2 | `TrpA1` | ✓ STRONG | 0.62 | 1.00 | 29 | 47 | 739 |
-| 3 | `Hsp23` | ✓ STRONG | 0.64 | 0.87 | 26 | 6 | 328 |
-| 4 | `Hsp26` | ✓ STRONG | 0.64 | 0.88 | 17 | 10 | 446 |
-| 5 | `Idh` | ✓ STRONG | 0.62 | 0.93 | 31 | 15 | 184 |
-| 6 | `Cbl` | ✓ STRONG | 0.62 | 0.90 | 24 | 13 | 164 |
-| 7 | `Exo70` | ✓ STRONG | 0.64 | 0.85 | 24 | 9 | 70 |
-| 8 | `Galk` | ✓ STRONG | 0.64 | 0.82 | 18 | 9 | 66 |
-| 9 | `Fhos` | ✓ STRONG | 0.64 | 0.82 | 24 | 5 | 124 |
-| 10 | `Arr2` | ✓ STRONG | 0.63 | 0.86 | 15 | 12 | 206 |
-| 11 | `Hsp22` | ✓ STRONG | 0.62 | 0.89 | 21 | 11 | 287 |
-| 12 | `CG4080` | ✓ STRONG | 0.65 | 0.80 | 20 | 7 | 48 |
-| 13 | `Ugp` | ✓ STRONG | 0.66 | 0.75 | 20 | 2 | 101 |
-| 14 | `teq` | ✓ STRONG | 0.63 | 0.84 | 22 | 7 | 114 |
-| 15 | `PGRP-LC` | ✓ STRONG | 0.65 | 0.76 | 23 | 10 | 490 |
+| 1 | `Rdl` | ✓ STRONG | 0.63 | 0.96 | 21 | 22 | 420 |
+| 2 | `TrpA1` | ✓ STRONG | 0.60 | 1.00 | 29 | 47 | 739 |
+| 3 | `Hsp23` | ✓ STRONG | 0.63 | 0.87 | 26 | 6 | 328 |
+| 4 | `Arr2` | ✓ STRONG | 0.62 | 0.86 | 15 | 12 | 206 |
+| 5 | `Galk` | ✓ STRONG | 0.63 | 0.82 | 18 | 9 | 66 |
+| 6 | `Ugp` | ✓ STRONG | 0.65 | 0.75 | 20 | 2 | 101 |
+| 7 | `Fhos` | ✓ STRONG | 0.63 | 0.82 | 24 | 5 | 124 |
+| 8 | `PGRP-LC` | ✓ STRONG | 0.65 | 0.76 | 23 | 10 | 490 |
+| 9 | `path` | ✓ STRONG | 0.63 | 0.82 | 21 | 6 | 114 |
+| 10 | `CG4080` | ✓ STRONG | 0.63 | 0.80 | 20 | 7 | 48 |
+| 11 | `Hsp22` | ✓ STRONG | 0.61 | 0.89 | 21 | 11 | 287 |
+| 12 | `Hsp67Bc` | ✓ STRONG | 0.61 | 0.87 | 25 | 10 | 113 |
+| 13 | `Hsp26` | ✓ STRONG | 0.61 | 0.88 | 17 | 10 | 446 |
+| 14 | `mRpL12` | ✓ STRONG | 0.64 | 0.76 | 20 | 3 | 80 |
+| 15 | `Uch-L5` | ✓ STRONG | 0.63 | 0.80 | 14 | 7 | 109 |
 
 ### `zinc_E` — Zinc on 3R
 
@@ -567,18 +567,18 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `ChAT` | ✓ STRONG | 0.63 | 0.93 | 17 | 19 | 401 |
-| 2 | `EndoA` | ✓ STRONG | 0.64 | 0.90 | 28 | 12 | 134 |
-| 3 | `Mpc1` | ✓ STRONG | 0.64 | 0.87 | 25 | 12 | 67 |
-| 4 | `VAChT` | ✓ STRONG | 0.64 | 0.86 | 27 | 8 | 121 |
-| 5 | `Mekk1` | ✓ STRONG | 0.64 | 0.73 | 28 | 9 | 147 |
-| 6 | `Octalpha2R` | ✓ STRONG | 0.64 | 0.76 | 15 | 4 | 77 |
-| 7 | `Epg5` | ✓ STRONG | 0.64 | 0.72 | 17 | 3 | 35 |
-| 8 | `Sgsh` | ✓ STRONG | 0.63 | 0.74 | 15 | 4 | 53 |
-| 9 | `gukh` | ✓ STRONG | 0.61 | 0.75 | 10 | 6 | 77 |
-| 10 | `gwl` | ✓ STRONG | 0.64 | 0.66 | 26 | 4 | 90 |
-| 11 | `Xrp1` | ✓ STRONG | 0.64 | 0.66 | 31 | 13 | 132 |
-| 12 | `dnk` | ✓ STRONG | 0.65 | 0.61 | 5 | 1 | 115 |
+| 1 | `EndoA` | ✓ STRONG | 0.63 | 0.90 | 28 | 12 | 134 |
+| 2 | `ChAT` | ✓ STRONG | 0.62 | 0.93 | 17 | 19 | 401 |
+| 3 | `Mpc1` | ✓ STRONG | 0.63 | 0.87 | 25 | 12 | 67 |
+| 4 | `VAChT` | ✓ STRONG | 0.62 | 0.86 | 27 | 8 | 121 |
+| 5 | `Mekk1` | ✓ STRONG | 0.63 | 0.73 | 28 | 9 | 147 |
+| 6 | `Octalpha2R` | ✓ STRONG | 0.62 | 0.76 | 15 | 4 | 77 |
+| 7 | `Epg5` | ✓ STRONG | 0.63 | 0.72 | 17 | 3 | 35 |
+| 8 | `Sgsh` | ✓ STRONG | 0.62 | 0.74 | 15 | 4 | 53 |
+| 9 | `Xrp1` | ✓ STRONG | 0.63 | 0.66 | 31 | 13 | 132 |
+| 10 | `gwl` | ✓ STRONG | 0.63 | 0.66 | 26 | 4 | 90 |
+| 11 | `gukh` | ✓ STRONG | 0.60 | 0.75 | 10 | 6 | 77 |
+| 12 | `dnk` | ✓ STRONG | 0.63 | 0.61 | 5 | 1 | 115 |
 | 13 | `Rh2` | ✓ STRONG | 0.63 | 0.62 | 12 | 5 | 140 |
 | 14 | `snRNP-U1-C` | ✓ STRONG | 0.64 | 0.55 | 15 | 9 | 66 |
 | 15 | `CG42613` | ✓ STRONG | 0.61 | 0.61 | 9 | 4 | 59 |
@@ -593,21 +593,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Hmgcr` | ✓ STRONG | 0.65 | 0.89 | 32 | 8 | 177 |
-| 2 | `Gdh` | ✓ STRONG | 0.65 | 0.88 | 20 | 12 | 156 |
-| 3 | `spas` | ✓ STRONG | 0.63 | 0.94 | 25 | 22 | 147 |
-| 4 | `mbc` | ✓ STRONG | 0.63 | 0.94 | 21 | 21 | 252 |
-| 5 | `nAChRα1` | ✓ STRONG | 0.63 | 0.92 | 25 | 15 | 204 |
-| 6 | `jar` | ✓ STRONG | 0.64 | 0.89 | 28 | 8 | 238 |
-| 7 | `slo` | ✓ STRONG | 0.60 | 0.99 | 36 | 30 | 348 |
-| 8 | `Dis3` | ✓ STRONG | 0.65 | 0.85 | 19 | 11 | 87 |
-| 9 | `Syx1A` | ✓ STRONG | 0.62 | 0.92 | 34 | 9 | 349 |
-| 10 | `Rpt2` | ✓ STRONG | 0.64 | 0.85 | 23 | 8 | 124 |
-| 11 | `Apc2` | ✓ STRONG | 0.61 | 0.93 | 24 | 16 | 285 |
-| 12 | `Pisd` | ✓ STRONG | 0.65 | 0.79 | 21 | 5 | 57 |
-| 13 | `atl` | ✓ STRONG | 0.62 | 0.90 | 27 | 15 | 107 |
-| 14 | `nau` | ✓ STRONG | 0.65 | 0.79 | 17 | 4 | 175 |
-| 15 | `PTPMT1` | ✓ STRONG | 0.64 | 0.79 | 20 | 6 | 48 |
+| 1 | `Hmgcr` | ✓ STRONG | 0.64 | 0.89 | 32 | 8 | 177 |
+| 2 | `Gdh` | ✓ STRONG | 0.64 | 0.88 | 20 | 12 | 156 |
+| 3 | `nAChRα1` | ✓ STRONG | 0.62 | 0.92 | 25 | 15 | 204 |
+| 4 | `mbc` | ✓ STRONG | 0.62 | 0.94 | 21 | 21 | 252 |
+| 5 | `slo` | ✓ STRONG | 0.60 | 0.99 | 36 | 30 | 348 |
+| 6 | `spas` | ✓ STRONG | 0.61 | 0.94 | 25 | 22 | 147 |
+| 7 | `Rpt2` | ✓ STRONG | 0.64 | 0.85 | 23 | 8 | 124 |
+| 8 | `Dis3` | ✓ STRONG | 0.63 | 0.85 | 19 | 11 | 87 |
+| 9 | `Syx1A` | ✓ STRONG | 0.60 | 0.92 | 34 | 9 | 349 |
+| 10 | `jar` | ✓ STRONG | 0.61 | 0.89 | 28 | 8 | 238 |
+| 11 | `Apc2` | ✓ STRONG | 0.60 | 0.93 | 24 | 16 | 285 |
+| 12 | `CG5715` | ✓ STRONG | 0.67 | 0.69 | 9 | 4 | 31 |
+| 13 | `Pisd` | ✓ STRONG | 0.64 | 0.79 | 21 | 5 | 57 |
+| 14 | `PTPMT1` | ✓ STRONG | 0.63 | 0.79 | 20 | 6 | 48 |
+| 15 | `nau` | ✓ STRONG | 0.63 | 0.79 | 17 | 4 | 175 |
 
 ### `zinc_G` — Zinc on 3R
 
@@ -619,21 +619,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `zfh1` | ✓ STRONG | 0.62 | 0.93 | 35 | 10 | 437 |
-| 2 | `dj-1beta` | ✓ STRONG | 0.62 | 0.93 | 27 | 21 | 122 |
-| 3 | `cindr` | ✓ STRONG | 0.62 | 0.92 | 30 | 14 | 134 |
-| 4 | `Rpt6R` | ✓ STRONG | 0.63 | 0.83 | 19 | 11 | 59 |
-| 5 | `Aralar` | ✓ STRONG | 0.66 | 0.75 | 11 | 5 | 84 |
-| 6 | `Fer1HCH` | ✓ STRONG | 0.61 | 0.88 | 31 | 7 | 207 |
-| 7 | `Fer2LCH` | ✓ STRONG | 0.64 | 0.78 | 20 | 12 | 157 |
-| 8 | `tll` | ✓ STRONG | 0.61 | 0.87 | 31 | 4 | 683 |
+| 1 | `dj-1beta` | ✓ STRONG | 0.60 | 0.93 | 27 | 21 | 122 |
+| 2 | `cindr` | ✓ STRONG | 0.61 | 0.92 | 30 | 14 | 134 |
+| 3 | `zfh1` | ✓ STRONG | 0.59 | 0.93 | 35 | 10 | 437 |
+| 4 | `Fer1HCH` | ✓ STRONG | 0.61 | 0.88 | 31 | 7 | 207 |
+| 5 | `5-HT7` | ✓ STRONG | 0.59 | 0.92 | 25 | 17 | 143 |
+| 6 | `Jon99Fi` | ✓ STRONG | 0.65 | 0.71 | 8 | 5 | 58 |
+| 7 | `Fer2LCH` | ✓ STRONG | 0.63 | 0.78 | 20 | 12 | 157 |
+| 8 | `Aralar` | ✓ STRONG | 0.64 | 0.75 | 11 | 5 | 84 |
 | 9 | `CG9698` | ✓ STRONG | 0.65 | 0.72 | 10 | 6 | 34 |
-| 10 | `jdp` | ✓ STRONG | 0.64 | 0.76 | 11 | 7 | 64 |
-| 11 | `PH4αEFB` | ✓ STRONG | 0.63 | 0.78 | 14 | 6 | 91 |
-| 12 | `5-HT7` | ✓ STRONG | 0.59 | 0.92 | 25 | 17 | 143 |
-| 13 | `PH4αMP` | ✓ STRONG | 0.64 | 0.75 | 11 | 7 | 46 |
-| 14 | `Ptx1` | ✓ STRONG | 0.61 | 0.84 | 18 | 11 | 94 |
-| 15 | `wts` | ✓ STRONG | 0.61 | 0.85 | 37 | 31 | 701 |
+| 10 | `Rpt6R` | ✓ STRONG | 0.61 | 0.83 | 19 | 11 | 59 |
+| 11 | `PH4αEFB` | ✓ STRONG | 0.62 | 0.78 | 14 | 6 | 91 |
+| 12 | `tll` | ✓ STRONG | 0.60 | 0.87 | 31 | 4 | 683 |
+| 13 | `Ptx1` | ✓ STRONG | 0.60 | 0.84 | 18 | 11 | 94 |
+| 14 | `PH4αMP` | ✓ STRONG | 0.63 | 0.75 | 11 | 7 | 46 |
+| 15 | `Ctr1C` | ✓ STRONG | 0.64 | 0.71 | 16 | 2 | 46 |
 
 ### `gemcitabine_GB` — Gemcitabine on 3L
 
@@ -649,21 +649,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `armi` | ✓ STRONG | 0.67 | 0.82 | 21 | 4 | 232 |
-| 2 | `sty` | ✓ STRONG | 0.60 | 0.96 | 29 | 20 | 232 |
-| 3 | `kst` | ✓ STRONG | 0.59 | 0.93 | 22 | 19 | 256 |
-| 4 | `ZnT63C` | ✓ STRONG | 0.62 | 0.83 | 23 | 6 | 104 |
-| 5 | `Ostm1` | ✓ STRONG | 0.64 | 0.71 | 9 | 6 | 32 |
-| 6 | `Gtpx` | ✓ STRONG | 0.63 | 0.73 | 11 | 3 | 134 |
-| 7 | `Strip` | ✓ STRONG | 0.63 | 0.70 | 31 | 8 | 66 |
-| 8 | `CycJ` | ✓ STRONG | 0.64 | 0.66 | 20 | 7 | 67 |
-| 9 | `CG17746` | ✓ STRONG | 0.64 | 0.64 | 9 | 7 | 63 |
-| 10 | `Eip63E` | ✓ STRONG | 0.62 | 0.68 | 29 | 4 | 139 |
-| 11 | `Drs` | ✓ STRONG | 0.62 | 0.66 | 22 | 11 | 812 |
-| 12 | `Ythdc1` | ✓ STRONG | 0.63 | 0.63 | 18 | 5 | 65 |
-| 13 | `CG10357` | ✓ STRONG | 0.64 | 0.57 | 7 | 4 | 37 |
-| 14 | `Larp4B` | ✓ STRONG | 0.63 | 0.61 | 15 | 5 | 58 |
-| 15 | `PIG-C` | ✓ STRONG | 0.60 | 0.69 | 9 | 4 | 41 |
+| 1 | `armi` | ✓ STRONG | 0.65 | 0.82 | 21 | 4 | 232 |
+| 2 | `sty` | ✓ STRONG | 0.59 | 0.96 | 29 | 20 | 232 |
+| 3 | `Gtpx` | ✓ STRONG | 0.63 | 0.73 | 11 | 3 | 134 |
+| 4 | `ZnT63C` | ✓ STRONG | 0.60 | 0.83 | 23 | 6 | 104 |
+| 5 | `Ostm1` | ✓ STRONG | 0.63 | 0.71 | 9 | 6 | 32 |
+| 6 | `kst` | ✓ STRONG | 0.57 | 0.93 | 22 | 19 | 256 |
+| 7 | `CycJ` | ✓ STRONG | 0.65 | 0.66 | 20 | 7 | 67 |
+| 8 | `Strip` | ✓ STRONG | 0.62 | 0.70 | 31 | 8 | 66 |
+| 9 | `CG17746` | ✓ STRONG | 0.63 | 0.64 | 9 | 7 | 63 |
+| 10 | `Eip63E` | ✓ STRONG | 0.61 | 0.68 | 29 | 4 | 139 |
+| 11 | `Ythdc1` | ✓ STRONG | 0.62 | 0.63 | 18 | 5 | 65 |
+| 12 | `Drs` | ✓ STRONG | 0.61 | 0.66 | 22 | 11 | 812 |
+| 13 | `PIG-C` | ✓ STRONG | 0.59 | 0.69 | 9 | 4 | 41 |
+| 14 | `Larp4B` | ✓ STRONG | 0.61 | 0.61 | 15 | 5 | 58 |
+| 15 | `CG10357` | ✓ STRONG | 0.62 | 0.57 | 7 | 4 | 37 |
 
 ### `methotrexate_C` — Methotrexate on 3L
 
@@ -675,25 +675,25 @@ Ordered by genome release (r6-native first), then by significance.
 - **Heritability**: 19%  
 - **Source**: [PMC3737169](https://pmc.ncbi.nlm.nih.gov/articles/PMC3737169/)  
 - **Total genes in interval**: 120  
-- **Quadrants**: ✓ STRONG **60** · ⚠ NOVEL_LEAD **60** · ✗ LIKELY_NOT **0** · ? CANT_RULE_OUT **0**
+- **Quadrants**: ✓ STRONG **59** · ⚠ NOVEL_LEAD **60** · ✗ LIKELY_NOT **1** · ? CANT_RULE_OUT **0**
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `armi` | ✓ STRONG | 0.67 | 0.82 | 21 | 4 | 232 |
-| 2 | `sty` | ✓ STRONG | 0.60 | 0.96 | 29 | 20 | 232 |
-| 3 | `Scsα1` | ✓ STRONG | 0.62 | 0.83 | 17 | 9 | 94 |
-| 4 | `enc` | ✓ STRONG | 0.68 | 0.64 | 21 | 4 | 96 |
-| 5 | `Tet` | ✓ STRONG | 0.61 | 0.85 | 27 | 7 | 105 |
-| 6 | `kst` | ✓ STRONG | 0.59 | 0.93 | 22 | 19 | 256 |
-| 7 | `ZnT63C` | ✓ STRONG | 0.62 | 0.83 | 23 | 6 | 104 |
-| 8 | `CG32281` | ✓ STRONG | 0.65 | 0.71 | 8 | 6 | 35 |
-| 9 | `Ostm1` | ✓ STRONG | 0.64 | 0.71 | 9 | 6 | 32 |
-| 10 | `Hsp83` | ✓ STRONG | 0.62 | 0.78 | 31 | 10 | 750 |
-| 11 | `Prx4` | ✓ STRONG | 0.61 | 0.83 | 24 | 6 | 105 |
-| 12 | `aly` | ✓ STRONG | 0.65 | 0.69 | 18 | 8 | 142 |
-| 13 | `rasp` | ✓ STRONG | 0.60 | 0.83 | 24 | 7 | 84 |
-| 14 | `Gtpx` | ✓ STRONG | 0.63 | 0.73 | 11 | 3 | 134 |
-| 15 | `promL` | ✓ STRONG | 0.60 | 0.83 | 31 | 6 | 61 |
+| 1 | `armi` | ✓ STRONG | 0.65 | 0.82 | 21 | 4 | 232 |
+| 2 | `sty` | ✓ STRONG | 0.59 | 0.96 | 29 | 20 | 232 |
+| 3 | `enc` | ✓ STRONG | 0.67 | 0.64 | 21 | 4 | 96 |
+| 4 | `Tet` | ✓ STRONG | 0.60 | 0.85 | 27 | 7 | 105 |
+| 5 | `CG32281` | ✓ STRONG | 0.64 | 0.71 | 8 | 6 | 35 |
+| 6 | `rasp` | ✓ STRONG | 0.60 | 0.83 | 24 | 7 | 84 |
+| 7 | `Hsp83` | ✓ STRONG | 0.62 | 0.78 | 31 | 10 | 750 |
+| 8 | `Gtpx` | ✓ STRONG | 0.63 | 0.73 | 11 | 3 | 134 |
+| 9 | `ZnT63C` | ✓ STRONG | 0.60 | 0.83 | 23 | 6 | 104 |
+| 10 | `aly` | ✓ STRONG | 0.64 | 0.69 | 18 | 8 | 142 |
+| 11 | `Ostm1` | ✓ STRONG | 0.63 | 0.71 | 9 | 6 | 32 |
+| 12 | `kst` | ✓ STRONG | 0.57 | 0.93 | 22 | 19 | 256 |
+| 13 | `promL` | ✓ STRONG | 0.60 | 0.83 | 31 | 6 | 61 |
+| 14 | `CycJ` | ✓ STRONG | 0.65 | 0.66 | 20 | 7 | 67 |
+| 15 | `Scsα1` | ✓ STRONG | 0.59 | 0.83 | 17 | 9 | 94 |
 
 ### `carboplatin_CA` — Carboplatin on X
 
@@ -709,20 +709,20 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `na` | ✓ STRONG | 0.60 | 0.93 | 30 | 17 | 122 |
-| 2 | `yl` | ✓ STRONG | 0.65 | 0.74 | 20 | 9 | 108 |
-| 3 | `NetA` | ✓ STRONG | 0.60 | 0.89 | 28 | 8 | 219 |
-| 4 | `Prp16` | ✓ STRONG | 0.62 | 0.78 | 24 | 3 | 75 |
-| 5 | `CG42271` | ✓ STRONG | 0.63 | 0.74 | 10 | 7 | 46 |
-| 6 | `mRpS25` | ✓ STRONG | 0.62 | 0.71 | 9 | 5 | 46 |
-| 7 | `Muc12Ea` | ✓ STRONG | 0.66 | 0.57 | 13 | 4 | 37 |
-| 8 | `nmdyn-D6` | ✓ STRONG | 0.63 | 0.67 | 7 | 4 | 37 |
-| 9 | `sbm` | ✓ STRONG | 0.59 | 0.75 | 16 | 4 | 61 |
-| 10 | `Tat` | ✓ STRONG | 0.61 | 0.68 | 12 | 2 | 44 |
-| 11 | `Fbxl4` | ✓ STRONG | 0.60 | 0.72 | 11 | 4 | 47 |
-| 12 | `mud` | ✓ STRONG | 0.63 | 0.61 | 26 | 6 | 196 |
-| 13 | `mRNA-cap` | ✓ STRONG | 0.65 | 0.50 | 12 | 6 | 56 |
-| 14 | `Dus2` | ✓ STRONG | 0.61 | 0.57 | 10 | 6 | 34 |
+| 1 | `yl` | ✓ STRONG | 0.64 | 0.74 | 20 | 9 | 108 |
+| 2 | `na` | ✓ STRONG | 0.58 | 0.93 | 30 | 17 | 122 |
+| 3 | `NetA` | ✓ STRONG | 0.59 | 0.89 | 28 | 8 | 219 |
+| 4 | `CG42271` | ✓ STRONG | 0.61 | 0.74 | 10 | 7 | 46 |
+| 5 | `Prp16` | ✓ STRONG | 0.60 | 0.78 | 24 | 3 | 75 |
+| 6 | `Muc12Ea` | ✓ STRONG | 0.65 | 0.57 | 13 | 4 | 37 |
+| 7 | `mRpS25` | ✓ STRONG | 0.61 | 0.71 | 9 | 5 | 46 |
+| 8 | `sbm` | ✓ STRONG | 0.59 | 0.75 | 16 | 4 | 61 |
+| 9 | `nmdyn-D6` | ✓ STRONG | 0.61 | 0.67 | 7 | 4 | 37 |
+| 10 | `Tat` | ✓ STRONG | 0.60 | 0.68 | 12 | 2 | 44 |
+| 11 | `mud` | ✓ STRONG | 0.62 | 0.61 | 26 | 6 | 196 |
+| 12 | `Fbxl4` | ✓ STRONG | 0.58 | 0.72 | 11 | 4 | 47 |
+| 13 | `mRNA-cap` | ✓ STRONG | 0.64 | 0.50 | 12 | 6 | 56 |
+| 14 | `Dus2` | ✓ STRONG | 0.60 | 0.57 | 10 | 6 | 34 |
 | 15 | `CG13404` | ✓ STRONG | 0.61 | 0.51 | 7 | 4 | 27 |
 
 ### `carboplatin_CB` — Carboplatin on 2L
@@ -739,21 +739,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `loqs` | ✓ STRONG | 0.63 | 0.91 | 23 | 14 | 197 |
-| 2 | `rk` | ✓ STRONG | 0.62 | 0.93 | 26 | 18 | 172 |
+| 1 | `loqs` | ✓ STRONG | 0.62 | 0.91 | 23 | 14 | 197 |
+| 2 | `rk` | ✓ STRONG | 0.61 | 0.93 | 26 | 18 | 172 |
 | 3 | `mTor` | ✓ STRONG | 0.62 | 0.92 | 31 | 8 | 820 |
-| 4 | `PolG2` | ✓ STRONG | 0.64 | 0.84 | 22 | 8 | 102 |
-| 5 | `Adc` | ✓ STRONG | 0.61 | 0.89 | 20 | 12 | 227 |
-| 6 | `Arpc1` | ✓ STRONG | 0.62 | 0.86 | 24 | 7 | 167 |
-| 7 | `Vha68-2` | ✓ STRONG | 0.60 | 0.93 | 25 | 21 | 145 |
-| 8 | `PolG1` | ✓ STRONG | 0.61 | 0.88 | 33 | 8 | 154 |
-| 9 | `Ance` | ✓ STRONG | 0.63 | 0.82 | 22 | 4 | 217 |
-| 10 | `bun` | ✓ STRONG | 0.65 | 0.72 | 24 | 8 | 230 |
-| 11 | `spel1` | ✓ STRONG | 0.64 | 0.77 | 14 | 5 | 89 |
-| 12 | `Pect` | ✓ STRONG | 0.62 | 0.83 | 25 | 7 | 77 |
-| 13 | `wb` | ✓ STRONG | 0.59 | 0.93 | 24 | 18 | 191 |
-| 14 | `ND-B22` | ✓ STRONG | 0.62 | 0.83 | 15 | 12 | 70 |
-| 15 | `Tehao` | ✓ STRONG | 0.63 | 0.77 | 20 | 3 | 91 |
+| 4 | `PolG1` | ✓ STRONG | 0.61 | 0.88 | 33 | 8 | 154 |
+| 5 | `PolG2` | ✓ STRONG | 0.62 | 0.84 | 22 | 8 | 102 |
+| 6 | `Arpc1` | ✓ STRONG | 0.61 | 0.86 | 24 | 7 | 167 |
+| 7 | `Pect` | ✓ STRONG | 0.61 | 0.83 | 25 | 7 | 77 |
+| 8 | `Ance` | ✓ STRONG | 0.62 | 0.82 | 22 | 4 | 217 |
+| 9 | `spel1` | ✓ STRONG | 0.63 | 0.77 | 14 | 5 | 89 |
+| 10 | `Vha68-2` | ✓ STRONG | 0.58 | 0.93 | 25 | 21 | 145 |
+| 11 | `wb` | ✓ STRONG | 0.58 | 0.93 | 24 | 18 | 191 |
+| 12 | `Adc` | ✓ STRONG | 0.59 | 0.89 | 20 | 12 | 227 |
+| 13 | `bun` | ✓ STRONG | 0.63 | 0.72 | 24 | 8 | 230 |
+| 14 | `Vha68-3` | ✓ STRONG | 0.64 | 0.70 | 10 | 3 | 70 |
+| 15 | `ND-B22` | ✓ STRONG | 0.60 | 0.83 | 15 | 12 | 70 |
 
 ### `methotrexate_A` — Methotrexate on X
 
@@ -770,20 +770,20 @@ Ordered by genome release (r6-native first), then by significance.
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
 | 1 | `Yp3` | ✓ STRONG | 0.65 | 0.85 | 20 | 7 | 237 |
-| 2 | `g` | ✓ STRONG | 0.62 | 0.89 | 23 | 10 | 225 |
-| 3 | `na` | ✓ STRONG | 0.60 | 0.93 | 30 | 17 | 122 |
-| 4 | `yl` | ✓ STRONG | 0.65 | 0.74 | 20 | 9 | 108 |
-| 5 | `NetA` | ✓ STRONG | 0.60 | 0.89 | 28 | 8 | 219 |
-| 6 | `DNAlig4` | ✓ STRONG | 0.60 | 0.88 | 20 | 15 | 103 |
-| 7 | `Set2` | ✓ STRONG | 0.60 | 0.87 | 28 | 9 | 95 |
-| 8 | `rdgB` | ✓ STRONG | 0.60 | 0.87 | 24 | 8 | 221 |
-| 9 | `Nadsyn` | ✓ STRONG | 0.63 | 0.77 | 12 | 8 | 54 |
-| 10 | `up` | ✓ STRONG | 0.59 | 0.88 | 30 | 7 | 218 |
-| 11 | `Bcat` | ✓ STRONG | 0.59 | 0.89 | 30 | 12 | 82 |
-| 12 | `Nna1` | ✓ STRONG | 0.62 | 0.77 | 17 | 5 | 56 |
-| 13 | `Prp16` | ✓ STRONG | 0.62 | 0.78 | 24 | 3 | 75 |
-| 14 | `CtsB` | ✓ STRONG | 0.62 | 0.79 | 11 | 9 | 82 |
-| 15 | `CG42271` | ✓ STRONG | 0.63 | 0.74 | 10 | 7 | 46 |
+| 2 | `g` | ✓ STRONG | 0.61 | 0.89 | 23 | 10 | 225 |
+| 3 | `yl` | ✓ STRONG | 0.64 | 0.74 | 20 | 9 | 108 |
+| 4 | `na` | ✓ STRONG | 0.58 | 0.93 | 30 | 17 | 122 |
+| 5 | `rdgB` | ✓ STRONG | 0.59 | 0.87 | 24 | 8 | 221 |
+| 6 | `Nadsyn` | ✓ STRONG | 0.62 | 0.77 | 12 | 8 | 54 |
+| 7 | `mus101` | ✓ STRONG | 0.63 | 0.75 | 30 | 13 | 113 |
+| 8 | `Bcat` | ✓ STRONG | 0.59 | 0.89 | 30 | 12 | 82 |
+| 9 | `NetA` | ✓ STRONG | 0.59 | 0.89 | 28 | 8 | 219 |
+| 10 | `DNAlig4` | ✓ STRONG | 0.59 | 0.88 | 20 | 15 | 103 |
+| 11 | `Set2` | ✓ STRONG | 0.59 | 0.87 | 28 | 9 | 95 |
+| 12 | `Alat` | ✓ STRONG | 0.60 | 0.81 | 20 | 7 | 73 |
+| 13 | `Nna1` | ✓ STRONG | 0.61 | 0.77 | 17 | 5 | 56 |
+| 14 | `CG1662` | ✓ STRONG | 0.62 | 0.72 | 16 | 3 | 34 |
+| 15 | `up` | ✓ STRONG | 0.57 | 0.88 | 30 | 7 | 218 |
 
 ### `gemcitabine_GA` — Gemcitabine on 2R
 
@@ -795,25 +795,25 @@ Ordered by genome release (r6-native first), then by significance.
 - **Heritability**: 9%  
 - **Source**: [PMC4174942](https://pmc.ncbi.nlm.nih.gov/articles/PMC4174942/)  
 - **Total genes in interval**: 338  
-- **Quadrants**: ✓ STRONG **192** · ⚠ NOVEL_LEAD **145** · ✗ LIKELY_NOT **1** · ? CANT_RULE_OUT **0**
+- **Quadrants**: ✓ STRONG **191** · ⚠ NOVEL_LEAD **145** · ✗ LIKELY_NOT **2** · ? CANT_RULE_OUT **0**
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
 | 1 | `Mos` | ✓ STRONG | 0.69 | 0.71 | 13 | 3 | 47 |
-| 2 | `en` | ✓ STRONG | 0.62 | 0.92 | 30 | 8 | 2070 |
-| 3 | `Amph` | ✓ STRONG | 0.61 | 0.95 | 28 | 22 | 164 |
-| 4 | `Taz` | ✓ STRONG | 0.63 | 0.88 | 28 | 11 | 84 |
-| 5 | `Drip` | ✓ STRONG | 0.65 | 0.81 | 20 | 6 | 100 |
-| 6 | `Drep1` | ✓ STRONG | 0.65 | 0.82 | 20 | 8 | 70 |
-| 7 | `alphaTry` | ✓ STRONG | 0.67 | 0.74 | 12 | 4 | 71 |
-| 8 | `Iswi` | ✓ STRONG | 0.60 | 0.98 | 28 | 22 | 387 |
-| 9 | `Nup54` | ✓ STRONG | 0.65 | 0.79 | 21 | 5 | 69 |
-| 10 | `Fpps` | ✓ STRONG | 0.64 | 0.81 | 16 | 9 | 71 |
-| 11 | `dare` | ✓ STRONG | 0.64 | 0.84 | 25 | 8 | 70 |
-| 12 | `otk` | ✓ STRONG | 0.63 | 0.87 | 19 | 12 | 137 |
-| 13 | `shn` | ✓ STRONG | 0.59 | 0.97 | 25 | 24 | 345 |
-| 14 | `Nop10` | ✓ STRONG | 0.65 | 0.77 | 17 | 5 | 50 |
-| 15 | `Prosβ5` | ✓ STRONG | 0.61 | 0.91 | 25 | 17 | 135 |
+| 2 | `Taz` | ✓ STRONG | 0.63 | 0.88 | 28 | 11 | 84 |
+| 3 | `alphaTry` | ✓ STRONG | 0.67 | 0.74 | 12 | 4 | 71 |
+| 4 | `Iswi` | ✓ STRONG | 0.59 | 0.98 | 28 | 22 | 387 |
+| 5 | `en` | ✓ STRONG | 0.61 | 0.92 | 30 | 8 | 2070 |
+| 6 | `Amph` | ✓ STRONG | 0.60 | 0.95 | 28 | 22 | 164 |
+| 7 | `Drep1` | ✓ STRONG | 0.63 | 0.82 | 20 | 8 | 70 |
+| 8 | `Drip` | ✓ STRONG | 0.63 | 0.81 | 20 | 6 | 100 |
+| 9 | `shn` | ✓ STRONG | 0.59 | 0.97 | 25 | 24 | 345 |
+| 10 | `dare` | ✓ STRONG | 0.62 | 0.84 | 25 | 8 | 70 |
+| 11 | `Prosβ5` | ✓ STRONG | 0.60 | 0.91 | 25 | 17 | 135 |
+| 12 | `otk` | ✓ STRONG | 0.61 | 0.87 | 19 | 12 | 137 |
+| 13 | `Nup54` | ✓ STRONG | 0.63 | 0.79 | 21 | 5 | 69 |
+| 14 | `Prip` | ✓ STRONG | 0.63 | 0.78 | 15 | 6 | 77 |
+| 15 | `fra` | ✓ STRONG | 0.57 | 0.96 | 25 | 23 | 285 |
 
 ### `methotrexate_B` — Methotrexate on 2R
 
@@ -829,21 +829,21 @@ Ordered by genome release (r6-native first), then by significance.
 
 | rank | symbol | quadrant | evidence | quality | n_b | n_r | n_p |
 |---:|---|---|---:|---:|---:|---:|---:|
-| 1 | `Hsf` | ✓ STRONG | 0.62 | 0.90 | 31 | 8 | 282 |
-| 2 | `pAbp` | ✓ STRONG | 0.62 | 0.86 | 25 | 23 | 287 |
-| 3 | `Ote` | ✓ STRONG | 0.69 | 0.62 | 24 | 10 | 129 |
-| 4 | `Nup75` | ✓ STRONG | 0.65 | 0.74 | 10 | 6 | 55 |
-| 5 | `Dnaaf3` | ✓ STRONG | 0.64 | 0.73 | 18 | 3 | 34 |
-| 6 | `Gtpbp1` | ✓ STRONG | 0.62 | 0.79 | 14 | 8 | 60 |
-| 7 | `PIG-O` | ✓ STRONG | 0.62 | 0.79 | 14 | 9 | 46 |
-| 8 | `Spn55B` | ✓ STRONG | 0.62 | 0.78 | 14 | 7 | 66 |
-| 9 | `rswl` | ✓ STRONG | 0.63 | 0.74 | 21 | 3 | 38 |
-| 10 | `Idgf5` | ✓ STRONG | 0.65 | 0.67 | 15 | 6 | 60 |
-| 11 | `Pcl` | ✓ STRONG | 0.60 | 0.82 | 29 | 20 | 311 |
-| 12 | `nopo` | ✓ STRONG | 0.61 | 0.77 | 18 | 5 | 52 |
-| 13 | `stau` | ✓ STRONG | 0.61 | 0.77 | 29 | 8 | 568 |
-| 14 | `Dtymk` | ✓ STRONG | 0.63 | 0.70 | 9 | 4 | 46 |
-| 15 | `Prp19` | ✓ STRONG | 0.63 | 0.69 | 27 | 6 | 102 |
+| 1 | `Hsf` | ✓ STRONG | 0.61 | 0.90 | 31 | 8 | 282 |
+| 2 | `Ote` | ✓ STRONG | 0.68 | 0.62 | 24 | 10 | 129 |
+| 3 | `pAbp` | ✓ STRONG | 0.60 | 0.86 | 25 | 23 | 287 |
+| 4 | `Dnaaf3` | ✓ STRONG | 0.64 | 0.73 | 18 | 3 | 34 |
+| 5 | `Nup75` | ✓ STRONG | 0.63 | 0.74 | 10 | 6 | 55 |
+| 6 | `Spn55B` | ✓ STRONG | 0.61 | 0.78 | 14 | 7 | 66 |
+| 7 | `rswl` | ✓ STRONG | 0.62 | 0.74 | 21 | 3 | 38 |
+| 8 | `nopo` | ✓ STRONG | 0.61 | 0.77 | 18 | 5 | 52 |
+| 9 | `Gtpbp1` | ✓ STRONG | 0.60 | 0.79 | 14 | 8 | 60 |
+| 10 | `PIG-O` | ✓ STRONG | 0.60 | 0.79 | 14 | 9 | 46 |
+| 11 | `Prp19` | ✓ STRONG | 0.63 | 0.69 | 27 | 6 | 102 |
+| 12 | `stau` | ✓ STRONG | 0.60 | 0.77 | 29 | 8 | 568 |
+| 13 | `Idgf5` | ✓ STRONG | 0.63 | 0.67 | 15 | 6 | 60 |
+| 14 | `Dp1` | ✓ STRONG | 0.64 | 0.62 | 18 | 3 | 111 |
+| 15 | `imd` | ✓ STRONG | 0.60 | 0.74 | 35 | 23 | 557 |
 
 ### `methotrexate_D` — Methotrexate on 3L–3R
 
