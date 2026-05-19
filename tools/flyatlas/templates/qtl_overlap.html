@@ -37,46 +37,74 @@
       </div>
     </section>
 
+    <section class="grid grid-cols-2 gap-4 text-sm">
+      <div class="bg-blue-50 border border-blue-200 p-3 rounded">
+        <div class="text-xs uppercase text-blue-900 mb-1">phenotype A — {{ detail.drug_a }}</div>
+        <div class="italic">"{{ detail.phenotype_a }}"</div>
+      </div>
+      <div class="bg-purple-50 border border-purple-200 p-3 rounded">
+        <div class="text-xs uppercase text-purple-900 mb-1">phenotype B — {{ detail.drug_b }}</div>
+        <div class="italic">"{{ detail.phenotype_b }}"</div>
+      </div>
+    </section>
+
     <section>
       <h2 class="text-sm font-semibold mb-2 text-stone-700">
-        Shared candidate genes (sorted by annotation depth)
+        Shared candidate genes — sorted by relevance to <em>both</em> phenotypes
       </h2>
       <p class="text-xs text-stone-500 mb-3">
-        These genes are inside <strong>both</strong> QTL intervals. The fact that
-        independent studies of different phenotypes both mapped to this region
-        makes any gene here a strong candidate for a <strong>general molecular
-        mechanism</strong> shared across the two stresses.
+        Each gene gets a Gemini semantic similarity score against <strong>each</strong>
+        parent phenotype independently. Ranking key: <code>min(ev_a, ev_b)</code> — genes
+        with high relevance to <em>both</em> stresses float to the top, since those are
+        the strongest evidence of a <strong>shared molecular mechanism</strong>. A gene
+        relevant to only one phenotype is interesting but less indicative of cross-class
+        biology.
       </p>
       <table class="w-full text-sm bg-white border border-stone-200 rounded">
         <thead class="bg-stone-50 text-xs uppercase text-stone-500">
           <tr>
             <th class="text-right p-2">#</th>
             <th class="text-left p-2">Symbol</th>
-            <th class="text-left p-2">FBgn</th>
-            <th class="text-left p-2">r6 location</th>
+            <th class="text-right p-2 num bg-blue-50" title="evidence against {{ detail.drug_a }} phenotype">ev_A</th>
+            <th class="text-right p-2 num bg-purple-50" title="evidence against {{ detail.drug_b }} phenotype">ev_B</th>
+            <th class="text-right p-2 num" title="min(ev_A, ev_B) — relevance to BOTH">min</th>
             <th class="text-right p-2 num">bullets</th>
             <th class="text-right p-2 num">refs</th>
-            <th class="text-right p-2 num">pubs</th>
-            <th class="text-left p-2">Summary (first 200 chars)</th>
+            <th class="text-left p-2">Summary</th>
           </tr>
         </thead>
         <tbody>
           {% for g in detail.genes %}
-          <tr class="border-t border-stone-100 hover:bg-stone-50">
+          {% set ev_a = g.ev_a or 0 %}
+          {% set ev_b = g.ev_b or 0 %}
+          {% set ev_min = g.ev_both or 0 %}
+          {% set is_both = ev_min >= 0.55 %}
+          {% set is_a_only = ev_a >= 0.55 and ev_b < 0.55 %}
+          {% set is_b_only = ev_b >= 0.55 and ev_a < 0.55 %}
+          <tr class="border-t border-stone-100 hover:bg-stone-50 {% if is_both %}bg-green-50{% elif is_a_only %}bg-blue-50/50{% elif is_b_only %}bg-purple-50/50{% endif %}">
             <td class="p-2 text-right num text-xs text-stone-500">{{ loop.index }}</td>
             <td class="p-2">
               <a href="/gene/{{ g.fbgn }}" class="text-blue-700 hover:underline font-medium">{{ g.symbol }}</a>
+              {% if is_both %}<span class="text-xs text-green-700 font-semibold ml-1" title="strong evidence for both stresses">★ both</span>
+              {% elif is_a_only %}<span class="text-xs text-blue-600 ml-1">A-only</span>
+              {% elif is_b_only %}<span class="text-xs text-purple-600 ml-1">B-only</span>{% endif %}
+              <code class="text-xs text-stone-400 ml-1">{{ g.fbgn }}</code>
             </td>
-            <td class="p-2 font-mono text-xs text-stone-400">{{ g.fbgn }}</td>
-            <td class="p-2 font-mono text-xs">{{ g.chr }}:{{ "{:,}".format(g.start) }}–{{ "{:,}".format(g.end) }}</td>
+            <td class="p-2 text-right num text-xs {% if ev_a >= 0.55 %}font-semibold text-blue-700{% endif %}">{{ "%.2f"|format(ev_a) }}</td>
+            <td class="p-2 text-right num text-xs {% if ev_b >= 0.55 %}font-semibold text-purple-700{% endif %}">{{ "%.2f"|format(ev_b) }}</td>
+            <td class="p-2 text-right num text-xs {% if ev_min >= 0.55 %}font-semibold text-green-700{% endif %}">{{ "%.2f"|format(ev_min) }}</td>
             <td class="p-2 text-right num text-xs">{{ g.n_bullets }}</td>
             <td class="p-2 text-right num text-xs">{{ g.n_refs }}</td>
-            <td class="p-2 text-right num text-xs">{{ g.n_pubs_total or 0 }}</td>
-            <td class="p-2 text-xs text-stone-600">{{ (g.summary or '')[:200] }}{% if (g.summary or '')|length > 200 %}…{% endif %}</td>
+            <td class="p-2 text-xs text-stone-600">{{ (g.summary or '')[:160] }}{% if (g.summary or '')|length > 160 %}…{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+      <p class="text-xs text-stone-500 mt-2">
+        <span class="bg-green-50 px-1">★ both</span> = relevant to both stresses (priority candidates) ·
+        <span class="bg-blue-50 px-1">A-only</span> = only matches {{ detail.drug_a }} ·
+        <span class="bg-purple-50 px-1">B-only</span> = only matches {{ detail.drug_b }}
+      </p>
     </section>
   {% endif %}
 </article>

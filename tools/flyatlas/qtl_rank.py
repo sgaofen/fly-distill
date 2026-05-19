@@ -160,8 +160,34 @@ def annotate_cross_species_from_canonical(fbgns: list[str]) -> dict[str, dict]:
     return out
 
 
+_CATEGORY_PRIORITY = {
+    # phenotype categories ranked by usefulness for QTL fine-mapping
+    "longevity": 0, "stress_response": 1, "disease_model": 2,
+    "behavior": 3, "metabolism": 4, "development": 5,
+}
+
+
+def _top_bullets_for_gene(db_path: str, fbgn: str, n: int = 3) -> list[dict]:
+    """Pull top n bullets for a gene, prioritized by category relevance to
+    QTL workflows (longevity > stress_response > disease_model > behavior >
+    other), with the longest evidence_text within each category first."""
+    c = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    c.row_factory = sqlite3.Row
+    rows = list(c.execute(
+        "SELECT category, phenotype, evidence_text, direction, confidence "
+        "FROM bullets WHERE fbgn=?", (fbgn,)
+    ))
+    c.close()
+    def key(b):
+        return (_CATEGORY_PRIORITY.get(b["category"], 99),
+                -len(b["evidence_text"] or ""))
+    rows.sort(key=key)
+    return [dict(r) for r in rows[:n]]
+
+
 def rank_qtl(db_path: str, qtl_id: str, topk: int = 20,
-             use_canonical_cs: bool = True) -> dict:
+             use_canonical_cs: bool = True,
+             with_bullets: bool = True) -> dict:
     """Returns full 2D ranking for one QTL."""
     qtl = get_qtl(db_path, qtl_id)
     if not qtl:
@@ -201,9 +227,14 @@ def rank_qtl(db_path: str, qtl_id: str, topk: int = 20,
     quadrant_order = {"STRONG": 0, "NOVEL_LEAD": 1, "LIKELY_NOT": 2, "CANT_RULE_OUT": 3}
     genes.sort(key=lambda g: (quadrant_order[g["quadrant"]], -g["evidence"] - 0.3 * g["quality"]))
 
+    selected = genes[:topk] if topk else genes
+    if with_bullets:
+        for g in selected:
+            g["top_bullets"] = _top_bullets_for_gene(db_path, g["fbgn"], n=3)
+
     return {
         "qtl": qtl,
-        "candidates": genes[:topk] if topk else genes,
+        "candidates": selected,
         "summary": {
             "total_in_interval": len(genes),
             "by_quadrant": {q: sum(1 for g in genes if g["quadrant"] == q)
