@@ -50,9 +50,21 @@ CREATE TABLE genes (
   n_bullets     INTEGER,
   n_refs        INTEGER,
   schema_version TEXT,
-  distilled_at  TEXT
+  distilled_at  TEXT,
+  -- r6 (current) coordinates from FB2026_01 gene_map_table
+  chr           TEXT,
+  start         INTEGER,
+  end           INTEGER,
+  strand        TEXT,
+  -- r5 (FB2014_01) coordinates from gene_map_table — for old QTL studies
+  chr_r5        TEXT,
+  start_r5      INTEGER,
+  end_r5        INTEGER,
+  strand_r5     TEXT
 );
 CREATE INDEX idx_genes_symbol ON genes(symbol);
+CREATE INDEX idx_genes_chr ON genes(chr, start, end);
+CREATE INDEX idx_genes_chr_r5 ON genes(chr_r5, start_r5, end_r5);
 
 CREATE TABLE bullets (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,6 +174,24 @@ def load_gene(p: Path) -> dict | None:
         return None
 
 
+def load_coords(tsv_path: Path) -> dict[str, dict]:
+    """Load FBgn → coords from a coords_r{5,6}.tsv produced by parse_gene_map_table.py."""
+    out: dict[str, dict] = {}
+    if not tsv_path.exists():
+        return out
+    with open(tsv_path) as f:
+        next(f, None)  # header
+        for line in f:
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) < 5: continue
+            fbgn, chr_, start, end, strand = parts[:5]
+            try:
+                out[fbgn] = {"chr": chr_, "start": int(start), "end": int(end), "strand": strand}
+            except ValueError:
+                continue
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(DEFAULT_DB))
@@ -177,11 +207,19 @@ def main():
     con.executescript(SCHEMA)
     cur = con.cursor()
 
+    # Load r5+r6 coordinate tables (FlyBase authoritative)
+    coord_dir = ROOT / "data" / "flybase_coords"
+    r6_coords = load_coords(coord_dir / "coords_r6.tsv")
+    r5_coords = load_coords(coord_dir / "coords_r5.tsv")
+    print(f"Loaded r6 coords: {len(r6_coords)} FBgns")
+    print(f"Loaded r5 coords: {len(r5_coords)} FBgns")
+
     genes_dir = Path(args.genes_dir)
     files = sorted(genes_dir.glob("*.json"))
     print(f"Loading {len(files)} canonicals from {genes_dir}...")
 
     n_genes = n_bullets = n_refs = n_orth = n_dis = n_syn = 0
+    n_no_r6 = n_no_r5 = 0
     for i, p in enumerate(files):
         c = load_gene(p)
         if not c:
@@ -192,16 +230,24 @@ def main():
         bullets = c.get("bullets") or []
         refs = c.get("references") or []
 
+        r6 = r6_coords.get(fbgn) or {}
+        r5 = r5_coords.get(fbgn) or {}
+        if not r6: n_no_r6 += 1
+        if not r5: n_no_r5 += 1
+
         cur.execute(
             "INSERT INTO genes(fbgn, symbol, summary, notes, provider, model_id, harness,"
-            " n_pubs_total, n_bullets, n_refs, schema_version, distilled_at)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            " n_pubs_total, n_bullets, n_refs, schema_version, distilled_at,"
+            " chr, start, end, strand, chr_r5, start_r5, end_r5, strand_r5)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?, ?,?,?,?, ?,?,?,?)",
             (
                 fbgn, symbol, c.get("snapshot"), c.get("notes"),
                 model.get("provider"), model.get("model_id"), model.get("harness"),
                 (c.get("source") or {}).get("n_pubs_total"),
                 len(bullets), len(refs),
                 c.get("schema_version"), c.get("distilled_at"),
+                r6.get("chr"), r6.get("start"), r6.get("end"), r6.get("strand"),
+                r5.get("chr"), r5.get("start"), r5.get("end"), r5.get("strand"),
             ),
         )
         n_genes += 1
@@ -297,6 +343,7 @@ def main():
     print(f"\nDone. {out_p}")
     print(f"  genes={n_genes}  bullets={n_bullets}  refs={n_refs}")
     print(f"  orthologs={n_orth}  diseases={n_dis}  synonyms={n_syn}")
+    print(f"  no_r6_coords={n_no_r6}  no_r5_coords={n_no_r5}")
 
 
 if __name__ == "__main__":

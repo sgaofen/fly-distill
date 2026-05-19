@@ -71,3 +71,11 @@ tools/embeddings.npz
 # Local-only scratch (Claude session memory + release tarballs)
 memory/
 release/
+
+# Working notes (session-scoped, not for git)
+WORKING_NOTES.md
+audits/
+
+# Large derived/raw FlyBase artifacts (regeneratable)
+data/flybase_gff/
+data/flybase_coords/
