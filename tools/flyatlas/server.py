@@ -208,31 +208,48 @@ def api_stats():
 
 
 @app.get("/api/region/{region}")
-def api_region(region: str):
+def api_region(region: str, release: str = "r6"):
     from . import embed_query as EQ
     loc = EQ.parse_region_string(region)
     if not loc:
         raise HTTPException(400, f"bad region: {region}")
-    return EQ.genes_in_region(*loc)
+    if release not in ("r5", "r6"):
+        raise HTTPException(400, "release must be r5 or r6")
+    return EQ.genes_in_region(*loc, release=release)
+
+
+@app.get("/api/lift/{region}")
+def api_lift(region: str, from_release: str = "r5"):
+    """Lift a chromosome region between release 5 and release 6 coordinates."""
+    from . import embed_query as EQ
+    loc = EQ.parse_region_string(region)
+    if not loc:
+        raise HTTPException(400, f"bad region: {region}")
+    if from_release not in ("r5", "r6"):
+        raise HTTPException(400, "from_release must be r5 or r6")
+    return EQ.lift_region(*loc, from_release=from_release)
 
 
 @app.get("/api/semantic")
-def api_semantic(q: str, limit: int = 20, region: Optional[str] = None):
+def api_semantic(q: str, limit: int = 20, region: Optional[str] = None,
+                 release: str = "r6"):
     from . import embed_query as EQ
-    return EQ.hybrid_query(region, q, top_k=limit)
+    return EQ.hybrid_query(region, q, top_k=limit, release=release)
 
 
 @app.get("/ask", response_class=HTMLResponse)
-def ask_page(request: Request, q: str = "", region: Optional[str] = None, limit: int = 10):
+def ask_page(request: Request, q: str = "", region: Optional[str] = None,
+             release: str = "r6", limit: int = 10):
     from . import embed_query as EQ
     result = None
     if q:
         try:
-            result = EQ.hybrid_query(region, q, top_k=limit)
+            result = EQ.hybrid_query(region, q, top_k=limit, release=release)
         except Exception as e:
             result = {"error": str(e)}
     return TEMPLATES.TemplateResponse("ask.html", {
-        "request": request, "q": q, "region": region, "result": result,
+        "request": request, "q": q, "region": region, "release": release,
+        "result": result,
     })
 
 

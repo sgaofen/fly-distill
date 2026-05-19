@@ -18,14 +18,23 @@
              placeholder="e.g. pupa height, alcohol sensitivity, hindwing margin, circadian period"
              autofocus>
     </div>
-    <div>
-      <label class="text-xs uppercase text-stone-500">QTL region (optional)</label>
-      <input name="region" value="{{ region or '' }}" class="w-full border border-stone-300 rounded px-3 py-2 mt-1 text-sm"
-             placeholder="e.g. 2L:5000000-6000000 or 2L:5e6-6e6">
+    <div class="flex gap-3">
+      <div class="flex-1">
+        <label class="text-xs uppercase text-stone-500">QTL region (optional)</label>
+        <input name="region" value="{{ region or '' }}" class="w-full border border-stone-300 rounded px-3 py-2 mt-1 text-sm"
+               placeholder="e.g. 2L:5000000-6000000 or 2L:5e6-6e6">
+      </div>
+      <div>
+        <label class="text-xs uppercase text-stone-500">Release</label>
+        <select name="release" class="border border-stone-300 rounded px-3 py-2 mt-1 text-sm">
+          <option value="r6" {% if release == 'r6' or not release %}selected{% endif %}>r6 (current)</option>
+          <option value="r5" {% if release == 'r5' %}selected{% endif %}>r5 (legacy)</option>
+        </select>
+      </div>
     </div>
     <div class="flex items-center gap-2">
       <button class="bg-stone-800 text-white text-sm px-4 py-1.5 rounded hover:bg-stone-700">Search</button>
-      <span class="text-xs text-stone-500">No region → semantic search across all 14,019 genes.</span>
+      <span class="text-xs text-stone-500">No region → semantic search across all 14,019 genes. r5 ↔ r6 conversion is per-FBgn via FlyBase gene_map_table.</span>
     </div>
   </form>
 

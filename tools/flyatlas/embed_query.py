@@ -165,16 +165,78 @@ def _ensure_region_columns_once(db_path: str = str(DB_PATH)) -> int:
         return ensure_region_columns(db_path)
 
 
-def genes_in_region(chr_: str, start: int, end: int, db_path: str = str(DB_PATH)) -> list[dict]:
+def genes_in_region(chr_: str, start: int, end: int,
+                    db_path: str = str(DB_PATH),
+                    release: str = "r6") -> list[dict]:
+    """release='r6' (default) queries chr/start/end; release='r5' queries
+    chr_r5/start_r5/end_r5. Both columns come from FlyBase authoritative
+    gene_map_table (FB2026_01 for r6, FB2014_01 for r5)."""
     _ensure_region_columns_once(db_path)
     c = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     c.row_factory = sqlite3.Row
-    sql = """
-      SELECT fbgn, symbol, chr, start, end, summary, n_bullets
-      FROM genes WHERE chr = ? AND end >= ? AND start <= ?
-      ORDER BY start
-    """
+    if release == "r5":
+        sql = """
+          SELECT fbgn, symbol, chr_r5 AS chr, start_r5 AS start, end_r5 AS end,
+                 chr AS chr_r6, start AS start_r6, end AS end_r6,
+                 summary, n_bullets
+          FROM genes
+          WHERE chr_r5 = ? AND end_r5 >= ? AND start_r5 <= ?
+          ORDER BY start_r5
+        """
+    else:
+        sql = """
+          SELECT fbgn, symbol, chr, start, end,
+                 chr_r5, start_r5, end_r5,
+                 summary, n_bullets
+          FROM genes
+          WHERE chr = ? AND end >= ? AND start <= ?
+          ORDER BY start
+        """
     return [dict(r) for r in c.execute(sql, (chr_, start, end))]
+
+
+def lift_region(chr_: str, start: int, end: int,
+                from_release: str, db_path: str = str(DB_PATH)) -> dict:
+    """Lift a region from one assembly release to the other by per-FBgn
+    coordinate join. Returns {target_chr, target_start, target_end,
+    n_genes, dropped} where 'dropped' is the number of genes in the
+    source interval that have no counterpart in the target release."""
+    if from_release not in ("r5", "r6"):
+        return {"error": "from_release must be 'r5' or 'r6'"}
+    target = "r6" if from_release == "r5" else "r5"
+    genes = genes_in_region(chr_, start, end, db_path=db_path, release=from_release)
+    if not genes:
+        return {"error": f"no genes in {from_release} {chr_}:{start}-{end}"}
+
+    src_starts, src_ends = [], []
+    tgt_chrs, tgt_starts, tgt_ends = [], [], []
+    dropped = 0
+    for g in genes:
+        if from_release == "r5":
+            tgt_chr = g.get("chr_r6"); tgt_s = g.get("start_r6"); tgt_e = g.get("end_r6")
+        else:
+            tgt_chr = g.get("chr_r5"); tgt_s = g.get("start_r5"); tgt_e = g.get("end_r5")
+        if tgt_chr and tgt_s and tgt_e:
+            tgt_chrs.append(tgt_chr); tgt_starts.append(tgt_s); tgt_ends.append(tgt_e)
+        else:
+            dropped += 1
+
+    if not tgt_chrs:
+        return {"error": f"all {len(genes)} genes lack {target} coords"}
+    from collections import Counter
+    cc = Counter(tgt_chrs)
+    target_chr = cc.most_common(1)[0][0]
+    sel_starts = [tgt_starts[i] for i, c in enumerate(tgt_chrs) if c == target_chr]
+    sel_ends = [tgt_ends[i] for i, c in enumerate(tgt_chrs) if c == target_chr]
+    return {
+        "source": {"release": from_release, "chr": chr_, "start": start, "end": end,
+                   "n_genes": len(genes)},
+        "target": {"release": target, "chr": target_chr,
+                   "start": min(sel_starts), "end": max(sel_ends)},
+        "dropped": dropped,
+        "warning": f"{len(tgt_chrs) - len(sel_starts)} genes mapped to other chromosomes"
+                   if len(set(tgt_chrs)) > 1 else None,
+    }
 
 
 def parse_region_string(s: str):
@@ -186,18 +248,20 @@ def parse_region_string(s: str):
     return m.group(1), int(float(m.group(2))), int(float(m.group(3)))
 
 
-def hybrid_query(region: str | None, query: str, top_k: int = 10) -> dict:
+def hybrid_query(region: str | None, query: str, top_k: int = 10,
+                 release: str = "r6") -> dict:
     """region: '2L:5e6-6e6' or None. query: free-text phenotype.
+    release: 'r6' (default) or 'r5' — applies to the region coordinate space.
     Returns: {fbgn_in_region, fbgn_ranked} with full per-gene info."""
     _ensure_region_columns_once()
-    out = {"region": region, "query": query}
+    out = {"region": region, "query": query, "release": release}
     fbgn_filter = None
     if region:
         loc = parse_region_string(region)
         if not loc:
             return {"error": f"bad region: {region}"}
         chr_, start, end = loc
-        in_region = genes_in_region(chr_, start, end)
+        in_region = genes_in_region(chr_, start, end, release=release)
         out["region_gene_count"] = len(in_region)
         out["region_genes"] = in_region
         fbgn_filter = [g["fbgn"] for g in in_region]

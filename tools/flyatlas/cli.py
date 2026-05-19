@@ -242,12 +242,34 @@ def cmd_region(args):
     if not loc:
         print(cfmt(f"bad region: {args.region}", "red"), file=sys.stderr); sys.exit(1)
     chr_, start, end = loc
-    rows = EQ.genes_in_region(chr_, start, end)
+    rows = EQ.genes_in_region(chr_, start, end, release=args.release)
     if args.json: print(json.dumps(rows, indent=2)); return
-    print(cfmt(f"{len(rows)} genes in {chr_}:{start:,}-{end:,}", "bold"))
+    print(cfmt(f"{len(rows)} genes in {chr_}:{start:,}-{end:,} ({args.release})", "bold"))
     render_table(rows, [("fbgn","FBgn",13),("symbol","Symbol",16),
                         ("start","Start",12),("n_bullets","Bullets",8),
                         ("summary","Summary",40)])
+
+
+def cmd_lift(args):
+    """Lift a chromosome region from one release coordinate system to the other,
+    via per-FBgn join against FlyBase gene_map_table."""
+    from . import embed_query as EQ
+    loc = EQ.parse_region_string(args.region)
+    if not loc:
+        print(cfmt(f"bad region: {args.region}", "red"), file=sys.stderr); sys.exit(1)
+    chr_, start, end = loc
+    result = EQ.lift_region(chr_, start, end, from_release=args.from_release, db_path=args.db)
+    if args.json: print(json.dumps(result, indent=2)); return
+    if "error" in result:
+        print(cfmt(result["error"], "red"), file=sys.stderr); sys.exit(1)
+    src = result["source"]; tgt = result["target"]
+    print(cfmt(f"{src['release']} → {tgt['release']} lift", "bold"))
+    print(f"  in  : {src['release']:>2} {src['chr']}:{src['start']:,}-{src['end']:,}  ({src['n_genes']} genes)")
+    print(f"  out : {tgt['release']:>2} {tgt['chr']}:{tgt['start']:,}-{tgt['end']:,}")
+    if result.get("dropped"):
+        print(f"  note: {result['dropped']} gene(s) had no {tgt['release']} coords (dropped from lift)")
+    if result.get("warning"):
+        print(cfmt(f"  warn: {result['warning']}", "yellow"))
 
 
 def cmd_export_bed(args):
@@ -290,7 +312,7 @@ def cmd_regions(args):
         if len(parts) < 3: continue
         chr_, start, end = parts[0], int(parts[1]), int(parts[2])
         label = parts[3] if len(parts) > 3 else f"{chr_}:{start}-{end}"
-        genes = EQ.genes_in_region(chr_, start, end)
+        genes = EQ.genes_in_region(chr_, start, end, release=args.release)
         region_count += 1
         for g in genes:
             out_rows.append({"region": label, **g})
@@ -326,7 +348,8 @@ def cmd_semantic(args):
 def cmd_ask(args):
     """Hybrid: region (optional) + phenotype semantic search."""
     from . import embed_query as EQ
-    out = EQ.hybrid_query(args.region, args.query, top_k=args.limit)
+    out = EQ.hybrid_query(args.region, args.query, top_k=args.limit,
+                          release=args.release)
     if args.json: print(json.dumps(out, indent=2)); return
     if "error" in out:
         print(cfmt(out["error"], "red"), file=sys.stderr); sys.exit(1)
@@ -477,8 +500,17 @@ def build_parser():
 
     sp = sub.add_parser("region", help="Genes in a chromosome region (e.g. 2L:5e6-6e6)")
     sp.add_argument("region", help="chr:start-end, e.g. 2L:5000000-6000000 or 2L:5e6-6e6")
+    sp.add_argument("--release", choices=["r5","r6"], default="r6",
+                    help="genome assembly release for the input coordinates (default r6)")
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_region)
+
+    sp = sub.add_parser("lift", help="Lift a chromosome region between release 5 and release 6 coordinates")
+    sp.add_argument("region", help="chr:start-end in the SOURCE release space")
+    sp.add_argument("--from", dest="from_release", choices=["r5","r6"], required=True,
+                    help="source release (the other one is the target)")
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_lift)
 
     sp = sub.add_parser("export-bed", help="Dump every gene's chr/start/end as BED/TSV/JSON (for bedtools intersect)")
     sp.add_argument("--out", default="-", help="output file or '-' for stdout")
@@ -487,6 +519,8 @@ def build_parser():
 
     sp = sub.add_parser("regions", help="Batch region query from a BED file (stdin or file)")
     sp.add_argument("input", help="BED file path or '-' for stdin")
+    sp.add_argument("--release", choices=["r5","r6"], default="r6",
+                    help="genome release for BED coordinates (default r6)")
     sp.add_argument("--out", default="-")
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_regions)
@@ -500,6 +534,8 @@ def build_parser():
     sp = sub.add_parser("ask", help="Hybrid: region (optional) + semantic phenotype rank")
     sp.add_argument("query", help="Phenotype, e.g. 'pupa height'")
     sp.add_argument("--region", help="Chr:start-end filter (optional)")
+    sp.add_argument("--release", choices=["r5","r6"], default="r6",
+                    help="genome release for --region coordinates (default r6)")
     sp.add_argument("--limit", type=int, default=10)
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_ask)
