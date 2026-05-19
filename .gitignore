@@ -80,3 +80,5 @@ audits/
 data/flybase_gff/
 data/flybase_coords/
 tools/embeddings.npz.bak.v1.3
+output/*.pdf
+output/*.html
