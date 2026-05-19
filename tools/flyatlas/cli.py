@@ -366,6 +366,48 @@ def cmd_stats(args):
     for tissue, n in s["top_tissues"]: print(f"  {tissue:20s} {n}")
 
 
+def cmd_qtl_rank(args):
+    from . import qtl_rank as QR
+    if not args.qtl_id:
+        rows = QR.list_qtls(args.db)
+        if args.json: print(json.dumps(rows, indent=2, default=str)); return
+        print(f"{'id':22} {'drug':14} {'chr':6} {'rel':>4}  {'n':>6}  phenotype")
+        for r in rows:
+            print(f"{r['id']:22} {r['study_drug']:14} {r['chr']:6} {r['release_orig']:>4}  "
+                  f"{(r['gene_count'] or 0):>6}  {r['phenotype'][:60]}")
+        return
+    result = QR.rank_qtl(args.db, args.qtl_id, topk=args.topk)
+    if args.json:
+        print(json.dumps(result, indent=2, default=str, ensure_ascii=False))
+    else:
+        print(QR.render_human(result))
+
+
+def cmd_qtl_overlap(args):
+    from . import qtl_overlap as QO
+    if args.detail:
+        a, b = args.detail.split(",")
+        result = QO.shared_genes(args.db, a, b, topk=args.topk)
+        if args.json: print(json.dumps(result, indent=2, default=str)); return
+        print(f"\n{result.get('shared_region','(no overlap)')}")
+        print(f"Overlap: {result.get('overlap_bp', '?')} bp, "
+              f"{result.get('n_shared_genes', '?')} genes\n")
+        for i, g in enumerate(result.get("genes", []), 1):
+            print(f"  {i:>3}  {g['symbol']:20} n_bullets={g['n_bullets']:>3} "
+                  f"n_refs={g['n_refs']:>3} n_pubs={g['n_pubs_total'] or 0:>4}")
+        return
+    overlaps = QO.coord_overlap(args.db)
+    if args.json: print(json.dumps(overlaps, indent=2, default=str)); return
+    if not overlaps:
+        print("No QTL coordinate overlaps."); return
+    print(f"\n{len(overlaps)} overlapping QTL pairs:\n")
+    print(f"{'QTL A':18} {'QTL B':18} {'chr':4}  {'overlap':>14}  {'genes':>5}  cross?")
+    for o in overlaps:
+        flag = "★ CROSS" if o["is_cross_drug_family"] else ""
+        print(f"{o['qtl_a']:18} {o['qtl_b']:18} {o['chr']:4}  "
+              f"{o['overlap_bp']:>12,} bp  {o['n_genes_in_shared_region']:>5}  {flag}")
+
+
 def cmd_serve(args):
     import uvicorn
     from .server import app
@@ -470,6 +512,19 @@ def build_parser():
     sp.add_argument("--host", default="127.0.0.1")
     sp.add_argument("--port", type=int, default=8765)
     sp.set_defaults(func=cmd_serve)
+
+    sp = sub.add_parser("qtl-rank", help="Rank candidate genes for a QTL (Long workflow)")
+    sp.add_argument("qtl_id", nargs="?",
+                    help="QTL id like caffeine_D; omit to list all 24 QTLs")
+    sp.add_argument("--topk", type=int, default=20)
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_qtl_rank)
+
+    sp = sub.add_parser("qtl-overlap", help="Find cross-QTL coordinate overlaps")
+    sp.add_argument("--detail", help="Show shared genes for one pair: <A_id>,<B_id>")
+    sp.add_argument("--topk", type=int, default=20)
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_qtl_overlap)
 
     return p
 
