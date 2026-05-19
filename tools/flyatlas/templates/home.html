@@ -73,6 +73,21 @@
     </div>
   </section>
 
+  <section class="bg-amber-50 border border-amber-200 p-5 rounded">
+    <h2 class="text-sm font-semibold mb-2 text-amber-900">★ QTL fine-mapping workspace (new in v1.4)</h2>
+    <p class="text-sm text-stone-700 mb-3">
+      24 published Drosophila QTLs ingested from Long's curated table. Each gets a ranked
+      candidate list with <strong>2D scoring</strong>: semantic-match × annotation-depth.
+      Cross-QTL coordinate overlaps surfaced automatically (independent studies pointing
+      to the same locus).
+    </p>
+    <div class="flex gap-4 text-sm">
+      <a href="/qtl" class="text-blue-700 hover:underline font-medium">→ Open QTL workspace</a>
+      <a href="/qtl/caffeine_D" class="text-blue-700 hover:underline">→ Strongest QTL (caffeine_D, −log₁₀P=13.1)</a>
+      <a href="/qtl-overlap/malathion_A/caffeine_D" class="text-blue-700 hover:underline">→ Cross-class finding (malathion × caffeine)</a>
+    </div>
+  </section>
+
   <section class="text-sm text-stone-600 leading-relaxed border-t border-stone-200 pt-6 space-y-2">
     <p><strong>Getting started:</strong></p>
     <ol class="list-decimal ml-6 space-y-1">
@@ -81,6 +96,7 @@
       <li>Browse by category, tissue, or paper from the lists on the left</li>
       <li>Disease lookup: <a href="/browse/disease/254100" class="text-blue-700 hover:underline">/browse/disease/254100</a> (MDRP / muscular dystrophy)</li>
       <li>Ortholog lookup: <a href="/browse/ortholog/IRS1" class="text-blue-700 hover:underline">/browse/ortholog/IRS1</a></li>
+      <li>QTL fine-mapping: <a href="/qtl/caffeine_D" class="text-blue-700 hover:underline">/qtl/caffeine_D</a> — see how 2D scoring ranks candidates</li>
     </ol>
   </section>
 </div>

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}QTL workspace — fly-distill atlas{% endblock %}
+{% block content %}
+<div class="space-y-8">
+  <section>
+    <h1 class="text-2xl font-semibold mb-2">QTL fine-mapping workspace</h1>
+    <p class="text-stone-600 text-sm leading-relaxed max-w-3xl">
+      24 published Drosophila QTLs (5 studies, 6 drug treatments). Each interval is
+      cross-referenced against the 14,019-gene atlas using <strong>Gemini semantic
+      similarity</strong> + <strong>annotation-quality</strong> scoring. The
+      framework follows Long's 2026-05-19 email: <em>two independent
+      dimensions, never collapsed into one number</em>.
+    </p>
+  </section>
+
+  {% if overlaps %}
+  <section class="bg-amber-50 border border-amber-200 p-4 rounded">
+    <h2 class="text-sm font-semibold mb-2 text-amber-900">
+      ★ Cross-QTL coordinate overlaps ({{ overlaps|length }} pairs)
+    </h2>
+    <p class="text-xs text-stone-600 mb-3">
+      Pairs of QTLs whose intervals share basepairs — independent studies pointing
+      to the same locus. Most interesting are <strong>cross-drug-family</strong> pairs.
+    </p>
+    <table class="w-full text-sm">
+      <thead class="text-xs uppercase text-stone-500">
+        <tr>
+          <th class="text-left p-1">QTL A</th>
+          <th class="text-left p-1">QTL B</th>
+          <th class="text-left p-1">chr</th>
+          <th class="text-right p-1 num">overlap</th>
+          <th class="text-right p-1 num">shared</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in overlaps %}
+        <tr class="border-t border-amber-100">
+          <td class="p-1"><a href="/qtl/{{ o.qtl_a }}" class="text-blue-700 hover:underline font-mono text-xs">{{ o.qtl_a }}</a>
+            <span class="text-stone-500 text-xs">({{ o.drug_a }})</span></td>
+          <td class="p-1"><a href="/qtl/{{ o.qtl_b }}" class="text-blue-700 hover:underline font-mono text-xs">{{ o.qtl_b }}</a>
+            <span class="text-stone-500 text-xs">({{ o.drug_b }})</span></td>
+          <td class="p-1 font-mono text-xs">{{ o.chr }}</td>
+          <td class="p-1 text-right num text-xs">
+            {% if o.overlap_bp >= 1000000 %}{{ "%.2f"|format(o.overlap_bp/1000000) }} Mb
+            {% else %}{{ "{:,}".format(o.overlap_bp) }} bp{% endif %}
+          </td>
+          <td class="p-1 text-right num">{{ o.n_genes_in_shared_region }}</td>
+          <td class="p-1">
+            {% if o.is_cross_drug_family %}<span class="text-amber-700 text-xs font-semibold">★ cross-class</span>{% endif %}
+            <a href="/qtl-overlap/{{ o.qtl_a }}/{{ o.qtl_b }}" class="text-stone-500 hover:text-blue-700 text-xs ml-1">▸ shared genes</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <section>
+    <h2 class="text-sm font-semibold mb-3 text-stone-700">All 24 QTLs</h2>
+    <table class="w-full text-sm bg-white border border-stone-200 rounded overflow-hidden">
+      <thead class="bg-stone-50 text-xs uppercase text-stone-500">
+        <tr>
+          <th class="text-left p-2">ID</th>
+          <th class="text-left p-2">Drug</th>
+          <th class="text-left p-2">Chr</th>
+          <th class="text-left p-2">Interval (r6)</th>
+          <th class="text-right p-2 num">−log₁₀P</th>
+          <th class="text-right p-2 num">genes</th>
+          <th class="text-left p-2">Release</th>
+          <th class="text-left p-2">Phenotype</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in qtls %}
+        <tr class="border-t border-stone-100 hover:bg-stone-50">
+          <td class="p-2"><a href="/qtl/{{ q.id }}" class="text-blue-700 hover:underline font-mono text-xs">{{ q.id }}</a></td>
+          <td class="p-2 text-xs">{{ q.study_drug }}</td>
+          <td class="p-2 font-mono text-xs">{{ q.chr }}</td>
+          <td class="p-2 font-mono text-xs">
+            {% if q.start_r6 and q.end_r6 %}
+              {{ "{:,}".format(q.start_r6) }}–{{ "{:,}".format(q.end_r6) }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="p-2 text-right num text-xs">{{ q.neg_log_p or '—' }}</td>
+          <td class="p-2 text-right num text-xs">{{ q.gene_count or '—' }}</td>
+          <td class="p-2">
+            <span class="text-xs {% if q.release_orig == 'r5' %}text-amber-700{% else %}text-stone-500{% endif %}">
+              {{ q.release_orig }}
+            </span>
+          </td>
+          <td class="p-2 text-xs text-stone-600">{{ q.phenotype[:80] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="text-sm text-stone-600 leading-relaxed border-t border-stone-200 pt-6 space-y-2">
+    <p><strong>How to read the candidate rankings:</strong></p>
+    <ul class="list-disc ml-6 space-y-1">
+      <li><span class="font-semibold text-green-700">✓ STRONG</span> — high evidence + well-annotated: priority follow-up</li>
+      <li><span class="font-semibold text-amber-700">⚠ NOVEL_LEAD</span> — high evidence + sparse annotation: worth experimental validation, may be an unstudied gene</li>
+      <li><span class="font-semibold text-stone-500">✗ LIKELY_NOT</span> — low evidence + well-annotated: can rule out with confidence</li>
+      <li><span class="font-semibold text-stone-400">? CANT_RULE_OUT</span> — low evidence + sparse annotation: <em>absence of evidence ≠ evidence of absence</em>, keep on the list</li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ a }} ∩ {{ b }} — QTL overlap{% endblock %}
+{% block content %}
+<article class="space-y-6">
+  <header>
+    <a href="/qtl" class="text-xs text-stone-500 hover:text-blue-700">‹ all QTLs</a>
+    <h1 class="text-2xl font-semibold mt-1">QTL coordinate overlap</h1>
+    <div class="flex items-baseline gap-3 mt-2 text-sm">
+      <a href="/qtl/{{ a }}" class="text-blue-700 hover:underline font-mono">{{ a }}</a>
+      <span class="text-stone-500">∩</span>
+      <a href="/qtl/{{ b }}" class="text-blue-700 hover:underline font-mono">{{ b }}</a>
+    </div>
+  </header>
+
+  {% if detail.error %}
+    <section class="bg-red-50 border border-red-200 p-4 rounded">
+      <p class="text-sm text-stone-700">{{ detail.error }}</p>
+    </section>
+  {% else %}
+    <section class="bg-amber-50 border border-amber-200 p-4 rounded">
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <div class="text-xs uppercase text-stone-500">shared region (r6)</div>
+          <div class="font-mono text-sm">{{ detail.shared_region }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase text-stone-500">overlap size</div>
+          <div class="text-lg font-semibold num">
+            {% if detail.overlap_bp >= 1000000 %}{{ "%.2f"|format(detail.overlap_bp/1000000) }} Mb
+            {% else %}{{ "{:,}".format(detail.overlap_bp) }} bp{% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs uppercase text-stone-500">shared genes</div>
+          <div class="text-lg font-semibold num">{{ detail.n_shared_genes }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-sm font-semibold mb-2 text-stone-700">
+        Shared candidate genes (sorted by annotation depth)
+      </h2>
+      <p class="text-xs text-stone-500 mb-3">
+        These genes are inside <strong>both</strong> QTL intervals. The fact that
+        independent studies of different phenotypes both mapped to this region
+        makes any gene here a strong candidate for a <strong>general molecular
+        mechanism</strong> shared across the two stresses.
+      </p>
+      <table class="w-full text-sm bg-white border border-stone-200 rounded">
+        <thead class="bg-stone-50 text-xs uppercase text-stone-500">
+          <tr>
+            <th class="text-right p-2">#</th>
+            <th class="text-left p-2">Symbol</th>
+            <th class="text-left p-2">FBgn</th>
+            <th class="text-left p-2">r6 location</th>
+            <th class="text-right p-2 num">bullets</th>
+            <th class="text-right p-2 num">refs</th>
+            <th class="text-right p-2 num">pubs</th>
+            <th class="text-left p-2">Summary (first 200 chars)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in detail.genes %}
+          <tr class="border-t border-stone-100 hover:bg-stone-50">
+            <td class="p-2 text-right num text-xs text-stone-500">{{ loop.index }}</td>
+            <td class="p-2">
+              <a href="/gene/{{ g.fbgn }}" class="text-blue-700 hover:underline font-medium">{{ g.symbol }}</a>
+            </td>
+            <td class="p-2 font-mono text-xs text-stone-400">{{ g.fbgn }}</td>
+            <td class="p-2 font-mono text-xs">{{ g.chr }}:{{ "{:,}".format(g.start) }}–{{ "{:,}".format(g.end) }}</td>
+            <td class="p-2 text-right num text-xs">{{ g.n_bullets }}</td>
+            <td class="p-2 text-right num text-xs">{{ g.n_refs }}</td>
+            <td class="p-2 text-right num text-xs">{{ g.n_pubs_total or 0 }}</td>
+            <td class="p-2 text-xs text-stone-600">{{ (g.summary or '')[:200] }}{% if (g.summary or '')|length > 200 %}…{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endif %}
+</article>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}{{ result.qtl.id }} — QTL candidate ranking{% endblock %}
+{% block content %}
+{% set q = result.qtl %}
+{% set s = result.summary or {"total_in_interval": 0, "by_quadrant": {"STRONG":0,"NOVEL_LEAD":0,"LIKELY_NOT":0,"CANT_RULE_OUT":0}} %}
+<article class="space-y-6">
+{% if result.warning and not result.candidates %}
+  <div class="bg-amber-50 border border-amber-200 p-3 rounded text-sm text-stone-700 mb-4">
+    ⚠ {{ result.warning }} — this typically affects cross-arm intervals (e.g.
+    chr "3L–3R") where the original study spans a centromere. The interval
+    can't be subset cleanly because our atlas indexes per chromosome arm.
+    See <a href="{{ q.pmc_url }}" target="_blank" class="text-blue-700 underline">source paper</a> for the original boundary.
+  </div>
+{% endif %}
+  <header>
+    <div class="flex items-baseline gap-3 flex-wrap">
+      <a href="/qtl" class="text-xs text-stone-500 hover:text-blue-700">‹ all QTLs</a>
+      <h1 class="text-2xl font-semibold font-mono">{{ q.id }}</h1>
+      <span class="cat-tag">{{ q.study_drug }}</span>
+      <span class="cat-tag">{{ q.drug_family }}</span>
+      <span class="text-xs text-stone-500">{{ q.release_orig }}</span>
+      {% if q.pmc_url %}<a href="{{ q.pmc_url }}" target="_blank" class="text-xs text-blue-700 hover:underline ml-auto">source paper ↗</a>{% endif %}
+    </div>
+    <p class="text-stone-700 mt-3 text-sm leading-relaxed italic">"{{ q.phenotype }}"</p>
+    <div class="text-xs text-stone-500 mt-2 flex gap-4 flex-wrap">
+      {% if q.start_r6 and q.end_r6 %}
+        <span><strong>r6:</strong> <code>{{ q.chr }}:{{ "{:,}".format(q.start_r6) }}–{{ "{:,}".format(q.end_r6) }}</code>
+              <span class="num">({{ "%.0f"|format((q.end_r6 - q.start_r6) / 1000) }} kb)</span></span>
+      {% endif %}
+      {% if q.start_r5 and q.end_r5 %}
+        <span><strong>r5:</strong> <code>{{ q.chr }}:{{ "{:,}".format(q.start_r5) }}–{{ "{:,}".format(q.end_r5) }}</code></span>
+      {% endif %}
+      {% if q.neg_log_p %}<span><strong>−log₁₀P:</strong> <span class="num">{{ q.neg_log_p }}</span></span>{% endif %}
+      {% if q.h2 %}<span><strong>h²:</strong> {{ q.h2 }}</span>{% endif %}
+      <span><strong>genes in interval:</strong> <span class="num">{{ s.total_in_interval }}</span>{% if q.gene_count %} <span class="text-stone-400">(Long reported {{ q.gene_count }})</span>{% endif %}</span>
+    </div>
+  </header>
+
+  {% if overlaps %}
+  <section class="bg-amber-50 border border-amber-200 p-3 rounded">
+    <div class="text-xs uppercase text-amber-900 mb-1">★ Cross-QTL overlap{{ 's' if overlaps|length > 1 else '' }}</div>
+    <p class="text-sm text-stone-700">
+      This QTL shares genome space with
+      {% for o in overlaps %}
+        {% set other_id = o.qtl_b if o.qtl_a == q.id else o.qtl_a %}
+        {% set other_drug = o.drug_b if o.qtl_a == q.id else o.drug_a %}
+        <a href="/qtl-overlap/{{ o.qtl_a }}/{{ o.qtl_b }}" class="text-blue-700 hover:underline font-mono text-xs">{{ other_id }}</a>
+        <span class="text-stone-500 text-xs">({{ other_drug }}, {% if o.overlap_bp >= 1000000 %}{{ "%.1f"|format(o.overlap_bp/1000000) }} Mb{% else %}{{ "{:,}".format(o.overlap_bp) }} bp{% endif %}, {{ o.n_genes_in_shared_region }} genes){% if not loop.last %};{% endif %}
+      {% endfor %}
+    </p>
+  </section>
+  {% endif %}
+
+  <section class="grid grid-cols-4 gap-3">
+    <div class="bg-green-50 border border-green-200 p-3 rounded">
+      <div class="text-xs uppercase text-green-700">✓ STRONG</div>
+      <div class="text-2xl font-semibold num">{{ s.by_quadrant.STRONG }}</div>
+      <div class="text-xs text-stone-500 mt-1">high ev + well-annotated</div>
+    </div>
+    <div class="bg-amber-50 border border-amber-200 p-3 rounded">
+      <div class="text-xs uppercase text-amber-700">⚠ NOVEL LEAD</div>
+      <div class="text-2xl font-semibold num">{{ s.by_quadrant.NOVEL_LEAD }}</div>
+      <div class="text-xs text-stone-500 mt-1">high ev + sparse — experimentally interesting</div>
+    </div>
+    <div class="bg-stone-100 border border-stone-200 p-3 rounded">
+      <div class="text-xs uppercase text-stone-600">✗ LIKELY NOT</div>
+      <div class="text-2xl font-semibold num">{{ s.by_quadrant.LIKELY_NOT }}</div>
+      <div class="text-xs text-stone-500 mt-1">low ev, but well-studied — confident exclude</div>
+    </div>
+    <div class="bg-stone-50 border border-stone-300 p-3 rounded">
+      <div class="text-xs uppercase text-stone-500">? CANT RULE OUT</div>
+      <div class="text-2xl font-semibold num">{{ s.by_quadrant.CANT_RULE_OUT }}</div>
+      <div class="text-xs text-stone-500 mt-1">no evidence either way — keep</div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-sm font-semibold mb-2 text-stone-700">
+      Ranked candidates ({{ result.candidates|length }} shown)
+    </h2>
+    <p class="text-xs text-stone-500 mb-3">
+      Click a row's symbol to drill into the full gene record (FlyBase bullets,
+      orthologs, OMIM disease links). <code>ev</code> = Gemini semantic similarity
+      between phenotype description and gene's pre-built embedding (which
+      includes cross-species MGI/HPO context). <code>q</code> = annotation-depth
+      composite (bullets + refs + pubs + has_HPO/MGI/disease − stub penalty).
+    </p>
+    <table class="w-full text-sm bg-white border border-stone-200 rounded">
+      <thead class="bg-stone-50 text-xs uppercase text-stone-500">
+        <tr>
+          <th class="text-right p-2">#</th>
+          <th class="text-left p-2">Symbol</th>
+          <th class="text-left p-2">Quadrant</th>
+          <th class="text-right p-2 num">evidence</th>
+          <th class="text-right p-2 num">quality</th>
+          <th class="text-right p-2 num">bullets</th>
+          <th class="text-right p-2 num">refs</th>
+          <th class="text-right p-2 num">pubs</th>
+          <th class="text-left p-2">cross-species</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in result.candidates %}
+        <tr class="border-t border-stone-100 hover:bg-stone-50">
+          <td class="p-2 text-right num text-stone-500 text-xs">{{ loop.index }}</td>
+          <td class="p-2">
+            <a href="/gene/{{ g.fbgn }}" class="text-blue-700 hover:underline font-medium">{{ g.symbol }}</a>
+            <code class="text-xs text-stone-400 ml-1">{{ g.fbgn }}</code>
+          </td>
+          <td class="p-2 text-xs">
+            {% if g.quadrant == "STRONG" %}<span class="text-green-700 font-semibold">✓ STRONG</span>
+            {% elif g.quadrant == "NOVEL_LEAD" %}<span class="text-amber-700 font-semibold">⚠ NOVEL</span>
+            {% elif g.quadrant == "LIKELY_NOT" %}<span class="text-stone-600">✗ likely not</span>
+            {% else %}<span class="text-stone-400">? can't rule</span>{% endif %}
+          </td>
+          <td class="p-2 text-right num text-xs">{{ "%.2f"|format(g.evidence) }}</td>
+          <td class="p-2 text-right num text-xs">{{ "%.2f"|format(g.quality) }}</td>
+          <td class="p-2 text-right num text-xs">{{ g.n_bullets }}</td>
+          <td class="p-2 text-right num text-xs">{{ g.n_refs }}</td>
+          <td class="p-2 text-right num text-xs">{{ g.n_pubs_total or 0 }}</td>
+          <td class="p-2 text-xs text-stone-500">
+            {% if g.has_HPO %}<span title="has human HPO phenotypes">🧑</span>{% endif %}
+            {% if g.has_MGI %}<span title="has mouse MGI knockout phenotypes">🐭</span>{% endif %}
+            {% if g.has_disease %}<span title="has OMIM disease link">⚕</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="border-t border-stone-200 pt-4">
+    <details>
+      <summary class="text-sm font-semibold text-stone-700">Methodology — 2D scoring</summary>
+      <div class="text-xs text-stone-600 mt-2 leading-relaxed max-w-3xl">
+        <p class="mb-2"><strong>Evidence (Gemini cosine):</strong> the phenotype description <em>"{{ q.phenotype }}"</em> is embedded by gemini-embedding-2 (3072-dim) and cosine-similarity-ranked against every gene's pre-built embedding. Each gene vector already contains its FlyBase summary + structured phenotype bullets + cross-species MGI/HPO phenotype context, so the semantic match captures fly biology + ortholog biology together.</p>
+        <p class="mb-2"><strong>Quality score:</strong> 0.30·log₁(n_bullets)/log₁(30) + 0.25·log₁(n_refs)/log₁(25) + 0.20·log₁(n_pubs)/log₁(500) + 0.10·I[has_HPO] + 0.10·I[has_MGI] + 0.05·I[has_disease] − 0.15·I[stub (n_bullets ≤ 3)].</p>
+        <p><strong>Quadrant cutoffs:</strong> evidence ≥ 0.55 and quality ≥ 0.50. The two axes are reported separately — never collapsed into a single score — so a sparsely-annotated gene with a strong semantic hit (NOVEL LEAD) is visible alongside a well-studied gene with the same hit (STRONG). This preserves Long's "absence of evidence is not evidence of absence" principle.</p>
+      </div>
+    </details>
+  </section>
+</article>
+{% endblock %}

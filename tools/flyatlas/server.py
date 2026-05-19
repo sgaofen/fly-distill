@@ -236,6 +236,68 @@ def ask_page(request: Request, q: str = "", region: Optional[str] = None, limit:
     })
 
 
+# -------------------- QTL workspace -------------------- #
+
+@app.get("/qtl", response_class=HTMLResponse)
+def qtl_list(request: Request):
+    from . import qtl_rank as QR, qtl_overlap as QO
+    qtls = QR.list_qtls(DB)
+    overlaps = QO.coord_overlap(DB)
+    # Sort QTLs by release_orig (r6 first), then by neg_log_p descending
+    qtls.sort(key=lambda q: (q["release_orig"] == "r5",
+                             -(q["neg_log_p"] or 0)))
+    return TEMPLATES.TemplateResponse("qtl_list.html", {
+        "request": request, "qtls": qtls, "overlaps": overlaps,
+    })
+
+
+@app.get("/qtl/{qtl_id}", response_class=HTMLResponse)
+def qtl_detail(request: Request, qtl_id: str, topk: int = 25):
+    from . import qtl_rank as QR, qtl_overlap as QO
+    result = QR.rank_qtl(DB, qtl_id, topk=topk)
+    if "error" in result:
+        raise HTTPException(404, result["error"])
+    # Also surface any cross-QTL overlaps involving this QTL
+    overlaps = [o for o in QO.coord_overlap(DB)
+                if o["qtl_a"] == qtl_id or o["qtl_b"] == qtl_id]
+    return TEMPLATES.TemplateResponse("qtl_detail.html", {
+        "request": request, "result": result, "overlaps": overlaps,
+    })
+
+
+@app.get("/qtl-overlap/{a}/{b}", response_class=HTMLResponse)
+def qtl_overlap_detail(request: Request, a: str, b: str, topk: int = 50):
+    from . import qtl_overlap as QO
+    detail = QO.shared_genes(DB, a, b, topk=topk)
+    return TEMPLATES.TemplateResponse("qtl_overlap.html", {
+        "request": request, "a": a, "b": b, "detail": detail,
+    })
+
+
+@app.get("/api/qtl")
+def api_qtl_list():
+    from . import qtl_rank as QR
+    return QR.list_qtls(DB)
+
+
+@app.get("/api/qtl/{qtl_id}")
+def api_qtl_rank(qtl_id: str, topk: int = 50):
+    from . import qtl_rank as QR
+    return QR.rank_qtl(DB, qtl_id, topk=topk)
+
+
+@app.get("/api/qtl-overlap")
+def api_qtl_overlap():
+    from . import qtl_overlap as QO
+    return QO.coord_overlap(DB)
+
+
+@app.get("/api/qtl-overlap/{a}/{b}")
+def api_qtl_overlap_detail(a: str, b: str, topk: int = 50):
+    from . import qtl_overlap as QO
+    return QO.shared_genes(DB, a, b, topk=topk)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8765)
