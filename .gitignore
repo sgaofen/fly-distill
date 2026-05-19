@@ -79,3 +79,4 @@ audits/
 # Large derived/raw FlyBase artifacts (regeneratable)
 data/flybase_gff/
 data/flybase_coords/
+tools/embeddings.npz.bak.v1.3

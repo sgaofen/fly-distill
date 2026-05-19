@@ -98,19 +98,29 @@ def search_page(request: Request, q: str = "",
                 from . import embed_query as EQ
                 hybrid = EQ.hybrid_query(region, q, top_k=limit)
                 results = hybrid.get("ranked", []) if "error" not in hybrid else []
-                # Apply categorical filters as post-hoc: drop genes that have no bullet in that cat/dir/conf
-                if results and (category or direction or confidence):
+                # Apply categorical + tissue filters as post-hoc on semantic results
+                if results and (category or direction or confidence or tissue):
                     import sqlite3
                     c = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
                     keep = []
                     for r in results:
-                        cond_sql = "SELECT 1 FROM bullets WHERE fbgn=?"
-                        args_sql: list = [r["fbgn"]]
-                        if category:   cond_sql += " AND category=?";   args_sql.append(category)
-                        if direction:  cond_sql += " AND direction=?";  args_sql.append(direction)
-                        if confidence: cond_sql += " AND confidence=?"; args_sql.append(confidence)
-                        cond_sql += " LIMIT 1"
-                        if c.execute(cond_sql, args_sql).fetchone():
+                        ok = True
+                        if category or direction or confidence:
+                            cond_sql = "SELECT 1 FROM bullets WHERE fbgn=?"
+                            args_sql: list = [r["fbgn"]]
+                            if category:   cond_sql += " AND category=?";   args_sql.append(category)
+                            if direction:  cond_sql += " AND direction=?";  args_sql.append(direction)
+                            if confidence: cond_sql += " AND confidence=?"; args_sql.append(confidence)
+                            cond_sql += " LIMIT 1"
+                            if not c.execute(cond_sql, args_sql).fetchone():
+                                ok = False
+                        if ok and tissue:
+                            if not c.execute(
+                                "SELECT 1 FROM tissues WHERE fbgn=? AND tissue=? LIMIT 1",
+                                (r["fbgn"], tissue),
+                            ).fetchone():
+                                ok = False
+                        if ok:
                             keep.append(r)
                     results = keep
         except Exception as e:

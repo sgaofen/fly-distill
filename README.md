@@ -79,22 +79,29 @@ Free-text phenotype query, optionally constrained to a QTL region. Backed by Gem
 
 ## CLI
 
+The CLI is exposed as a Python module under `tools/`. Run it as `python -m flyatlas.cli <command>` from the `tools/` directory, or set up a shell alias:
+
 ```bash
-flyatlas gene chico                       # full detail
-flyatlas search "pupa height"             # semantic search (default)
-flyatlas search "Z disc AND muscle" --keyword   # FTS5 keyword fallback
-flyatlas ask "pupa height" --region 2L:5e6-6e6  # hybrid: region filter ∘ semantic rank
-flyatlas semantic "alcohol sensitivity"   # pure semantic over full atlas
-flyatlas region 2L:5e6-6e6                # all genes in a chromosome region
-flyatlas regions qtl_peaks.bed            # batch — input BED file
-flyatlas export-bed --format bed          # dump all 14k genes' coordinates as BED
-flyatlas disease 254100                   # MDRP fly models
-flyatlas ortholog IRS1                    # fly orthologs of human IRS1
-flyatlas paper FBrf0210226                # genes citing this paper
-flyatlas tissue eye                       # genes with bullets tagged with eye
-flyatlas category disease_model           # phenotype-category browse
-flyatlas stats                            # atlas-wide stats
-flyatlas serve                            # launch Web UI
+# one-time alias setup (recommended)
+alias fly='python -m flyatlas.cli'
+
+# then:
+fly gene chico                       # full detail
+fly search "pupa height"             # semantic search (default)
+fly search "Z disc AND muscle" --keyword   # FTS5 keyword fallback
+fly ask "pupa height" --region 2L:5e6-6e6  # hybrid: region filter ∘ semantic rank
+fly semantic "alcohol sensitivity"   # pure semantic over full atlas
+fly region 2L:5e6-6e6                # all genes in a chromosome region
+fly regions qtl_peaks.bed            # batch — input BED file
+fly export-bed --format bed          # dump all 14k genes' coordinates as BED
+fly disease 254100                   # MDRP fly models
+fly ortholog IRS1                    # fly orthologs of human IRS1
+fly paper FBrf0210226                # genes citing this paper
+fly tissue eye                       # genes with bullets tagged with eye
+fly category disease_model           # phenotype-category browse
+fly stats                            # atlas-wide stats
+fly serve                            # launch Web UI
+fly qtl-rank caffeine_D              # rank candidates for one QTL (Long workflow)
 ```
 
 Each command also accepts `--json` for piping.

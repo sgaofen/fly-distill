@@ -33,12 +33,29 @@ ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:emb
 
 
 def load_key() -> str:
+    # Prefer process env, then .env (BOM/quotes/comments tolerant).
+    v = os.environ.get("GEMINI_EMBEDDING_API_KEY")
+    if v:
+        return v.strip()
     p = ROOT / ".env"
     if p.exists():
-        for line in p.read_text().splitlines():
-            if line.startswith("GEMINI_EMBEDDING_API_KEY="):
-                return line.split("=", 1)[1].strip()
-    raise SystemExit("GEMINI_EMBEDDING_API_KEY not found in .env")
+        text = p.read_text(encoding="utf-8-sig")
+        for raw in text.splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[len("export "):].lstrip()
+            if not line.startswith("GEMINI_EMBEDDING_API_KEY="):
+                continue
+            val = line.split("=", 1)[1].strip()
+            if val and val[0] not in "'\"":
+                val = val.split("#", 1)[0].rstrip()
+            if len(val) >= 2 and val[0] == val[-1] and val[0] in "'\"":
+                val = val[1:-1]
+            if val:
+                return val
+    raise SystemExit("GEMINI_EMBEDDING_API_KEY missing in env or .env")
 
 
 def build_gene_text(c: dict) -> str:
@@ -94,7 +111,10 @@ def build_gene_text(c: dict) -> str:
     if c.get("notes"):
         bullets_text += f"\nNOTES: {c['notes'][:300]}"
 
-    full = head_text + "\n" + bullets_text + cs_block
+    # Order matters: head first (always tiny), cross-species block second
+    # (guaranteed-present signal we paid for), bullets last (truncation tail
+    # falls on bullets, never on cross-species).
+    full = head_text + "\n" + cs_block + "\n" + bullets_text
     return full[:CAP]
 
 

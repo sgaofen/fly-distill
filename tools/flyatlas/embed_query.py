@@ -25,12 +25,32 @@ MODEL = "gemini-embedding-2"
 
 
 def _load_key() -> str:
+    # 1) os.environ first (CI / explicit export wins over .env)
+    v = os.environ.get("GEMINI_EMBEDDING_API_KEY")
+    if v:
+        return v.strip()
+    # 2) .env fallback — handle quoted values, leading "export", BOM, comments
     p = ROOT / ".env"
     if p.exists():
-        for line in p.read_text().splitlines():
-            if line.startswith("GEMINI_EMBEDDING_API_KEY="):
-                return line.split("=", 1)[1].strip()
-    raise SystemExit("GEMINI_EMBEDDING_API_KEY missing in .env")
+        text = p.read_text(encoding="utf-8-sig")  # strips BOM
+        for raw in text.splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[len("export "):].lstrip()
+            if not line.startswith("GEMINI_EMBEDDING_API_KEY="):
+                continue
+            val = line.split("=", 1)[1].strip()
+            # Strip inline comment after unquoted value
+            if val and val[0] not in "'\"":
+                val = val.split("#", 1)[0].rstrip()
+            # Strip matching surrounding quotes
+            if len(val) >= 2 and val[0] == val[-1] and val[0] in "'\"":
+                val = val[1:-1]
+            if val:
+                return val
+    raise SystemExit("GEMINI_EMBEDDING_API_KEY missing in env or .env")
 
 
 @lru_cache(maxsize=1)

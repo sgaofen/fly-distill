@@ -89,7 +89,7 @@
               <span class="text-xs text-stone-500">· bullets {{ r.n_bullets }}</span>
               {% if r.score is defined %}<span class="ml-auto text-xs text-green-700 num">score {{ "%.3f"|format(r.score) }}</span>{% endif %}
             </div>
-            {% if r.snip %}<div class="text-sm text-stone-700 mt-1">{{ r.snip|safe }}</div>
+            {% if r.snip %}<div class="text-sm text-stone-700 mt-1">{{ r.snip|escape|replace('&lt;b&gt;', '<b>')|replace('&lt;/b&gt;', '</b>')|safe }}</div>
             {% elif r.summary %}<div class="text-sm text-stone-700 mt-1">{{ r.summary[:280] }}</div>{% endif %}
           </li>
         {% endfor %}

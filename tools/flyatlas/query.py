@@ -39,9 +39,11 @@ def resolve_gene(db, query: str) -> str | None:
     """Resolve fbgn|symbol|annotation_id|secondary_fbgn → canonical fbgn."""
     c = _conn(db)
     q = query.strip()
-    # Direct fbgn
-    if q.upper().startswith("FBGN"):
-        r = c.execute("SELECT fbgn FROM genes WHERE fbgn = ?", (q,)).fetchone()
+    # Direct fbgn — normalize prefix to canonical "FBgn" mixed-case so users
+    # can paste either "fbgn0024248", "FBGN0024248", or "FBgn0024248".
+    if q.lower().startswith("fbgn"):
+        canon = "FBgn" + q[4:]
+        r = c.execute("SELECT fbgn FROM genes WHERE fbgn = ?", (canon,)).fetchone()
         if r: return r["fbgn"]
     # Symbol exact
     r = c.execute("SELECT fbgn FROM genes WHERE symbol = ? COLLATE NOCASE", (q,)).fetchone()
@@ -123,7 +125,12 @@ def search(db, query: str, *,
         params.append(tissue)
     sql += " ORDER BY bm25(fts_genes) LIMIT ?"
     params.append(limit)
-    return [dict(r) for r in c.execute(sql, params)]
+    try:
+        return [dict(r) for r in c.execute(sql, params)]
+    except sqlite3.OperationalError as e:
+        # FTS5 rejects malformed queries (unbalanced quotes, leading *, etc.)
+        # Return empty + warning rather than 500-ing the caller.
+        return [{"_error": f"FTS5 query rejected: {e}", "_fts_q": fts_q}]
 
 
 def genes_by_disease(db, omim_or_name: str, limit: int = 200) -> list[dict]:
