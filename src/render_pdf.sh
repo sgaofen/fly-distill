@@ -86,6 +86,65 @@ blockquote { border-left: 3px solid #ccc; margin: 0.8em 0; padding: 0.1em 1em; c
 /* keep big section blocks together */
 h2, h3 { page-break-after: avoid; }
 table { page-break-inside: avoid; }
+
+/* per-QTL section: hard horizontal divider + page break inside avoid */
+.qtl-section {
+  border-top: 3px solid #2c2c2c;
+  padding-top: 1.2em;
+  margin-top: 2em;
+}
+.qtl-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+/* query-block: paired old/new highlights */
+.query-block {
+  background: #f7f7f7;
+  border-left: 4px solid #9ca3af;
+  padding: 0.5em 0.9em;
+  margin: 0.8em 0;
+  font-size: 9.8pt;
+}
+.query-block blockquote {
+  margin: 0.2em 0 0.5em 0;
+  padding: 0;
+  border: none;
+  font-style: italic;
+  color: #333;
+}
+
+/* rising-gene list: each gene gets its own breathable block */
+.rise-list {
+  margin: 0.4em 0;
+}
+.gene-entry {
+  margin: 0.5em 0;
+  padding: 0.5em 0.7em;
+  background: #f0fdf4;
+  border-left: 3px solid #16a34a;
+  border-radius: 0 4px 4px 0;
+  page-break-inside: avoid;
+}
+.gene-head {
+  font-size: 10pt;
+  margin-bottom: 0.25em;
+}
+.gene-head strong {
+  color: #15803d;
+  font-size: 10.5pt;
+}
+.gene-head code {
+  font-size: 8.5pt;
+  background: transparent;
+  color: #6b7280;
+}
+.gene-bio {
+  font-size: 9.5pt;
+  color: #1f2937;
+  line-height: 1.4;
+}
 EOF
 
 echo "▸ pandoc → HTML"

@@ -1,16 +1,5 @@
-"""Generate a focused before/after demo: 4 representative QTLs run with both
-the original (Long's verbatim) phenotype string and the drug-mechanism-enriched
-phenotype string. Shows top candidates side-by-side with FlyBase biology to
-make the "what enriched query unlocks" story concrete.
-
-Demo QTLs chosen for biological signal-to-noise:
-  - zinc_D     (Zn, the MTF-1 result is the headline)
-  - methotrexate_A (DNA repair direct hits)
-  - malathion_A    (xenobiotic detox + ABC efflux cluster)
-  - caffeine_D     (cleanest demo, strongest -log10P)
-
-Run:
-  python src/build_enriched_demo.py
+"""Generate a focused before/after demo for 4 representative QTLs.
+Minimal narrative. Email body carries the context; PDF carries the data.
 """
 from __future__ import annotations
 import json
@@ -23,7 +12,11 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 from flyatlas.qtl_rank import rank_qtl
 
-# Same enriched phenotype dictionary as src/test_enriched_phenotypes.py
+
+DB = str(ROOT / "tools" / "atlas.db")
+OUT = ROOT / "output" / "qtl_enriched_demo.md"
+
+
 ENRICHED = {
     "Carboplatin": (
         "Female fly fertility loss after carboplatin chemotherapy exposure. "
@@ -35,7 +28,7 @@ ENRICHED = {
     ),
     "Gemcitabine": (
         "Female fly fertility loss after gemcitabine chemotherapy exposure. "
-        "Gemcitabine is a cytidine analog that is incorporated into DNA during "
+        "Gemcitabine is a cytidine analog incorporated into DNA during "
         "replication, stalling synthesis and killing fast-dividing germline "
         "cells, causing ovary atrophy. Best candidates protect against "
         "nucleoside-analog incorporation, repair stalled forks, or reduce "
@@ -77,17 +70,7 @@ ENRICHED = {
 }
 
 
-DB = str(ROOT / "tools" / "atlas.db")
-OUT = ROOT / "output" / "qtl_enriched_demo.md"
-
-
-# Selected QTLs + an explanation of WHY we picked each for the demo
-DEMO_QTLS = [
-    ("zinc_D", "Strongest qualitative shift — MTF-1, the textbook metal-responsive transcription factor in Drosophila, rises to #2 (was not in top-7) once the query mentions zinc / metal homeostasis."),
-    ("methotrexate_A", "Direct DNA-repair hits surface: DNAlig4 #1 and mus101 #2, both replacing generic ovary genes like yolkless."),
-    ("malathion_A", "Xenobiotic-detox cluster (Cyp12d1, Cyp6g1/g2) plus multi-drug-resistance ABC transporters (Mdr49, Mdr65) all rise to the top — exactly the pharmacology-relevant gene families."),
-    ("caffeine_D", "Subtler shift on top of an already-strong result. Cyp450 paralogs stay; Ugt36A1 (phase-II detox glucuronidation) and Cyp6d5 (another P450) appear."),
-]
+DEMO_QTLS = ["zinc_D", "methotrexate_A", "malathion_A", "caffeine_D"]
 
 
 def run(qtl_id: str, phenotype_override: str | None = None, topk: int = 7):
@@ -115,122 +98,97 @@ def get_summary(fbgn: str) -> str:
     c.close()
     s = (r["summary"] or "") if r else ""
     sentences = s.split(". ")
-    short = ". ".join(sentences[:2])
-    if len(short) > 320:
-        short = short[:320] + "..."
+    short = ". ".join(sentences[:1])
+    if len(short) > 220:
+        short = short[:220] + "..."
     elif sentences and not short.endswith("."):
         short += "."
     return short
 
 
-def fmt_cands(cands, max_n=7):
-    return [f"`{c['symbol']}`" for c in cands[:max_n]]
-
-
-def write_qtl_section(f, qtl_id: str, reason: str) -> None:
+def write_qtl_section(f, qtl_id: str) -> None:
     c = sqlite3.connect(DB)
     c.row_factory = sqlite3.Row
     qrow_raw = c.execute("SELECT * FROM qtls WHERE id=?", (qtl_id,)).fetchone()
     if not qrow_raw:
-        f.write(f"### {qtl_id}\n\n*(QTL not found)*\n\n"); return
+        return
     qrow = dict(qrow_raw)
     c.close()
 
     drug = qrow["study_drug"]
     enriched_query = ENRICHED.get(drug)
-    if not enriched_query:
-        f.write(f"### {qtl_id}\n\n*(no enriched query for drug `{drug}`)*\n\n"); return
+    if not enriched_query: return
 
-    # BEFORE / AFTER
     before = run(qtl_id, phenotype_override=None, topk=7)
     after = run(qtl_id, phenotype_override=enriched_query, topk=7)
 
-    f.write(f"### {qtl_id} — {drug}\n\n")
-    f.write(f"_{reason}_\n\n")
+    # Header
+    f.write(f'<div class="qtl-section">\n\n')
+    f.write(f"## {qtl_id} — {drug}\n\n")
+    f.write(f"`{qrow['chr']}:{qrow['start_r6']:,}–{qrow['end_r6']:,}`")
+    if qrow.get("neg_log_p"):
+        f.write(f" · −log₁₀(P) = {qrow['neg_log_p']}")
+    if qrow.get("gene_count"):
+        f.write(f" · {qrow['gene_count']} genes")
+    f.write("\n\n")
 
-    f.write("**QTL details**\n\n")
-    f.write(f"| | |\n|---|---|\n")
-    f.write(f"| **Region (r6)** | `{qrow['chr']}:{qrow['start_r6']:,}–{qrow['end_r6']:,}` |\n")
-    if qrow.get("neg_log_p") is not None:
-        f.write(f"| **Significance** | −log₁₀(P) = {qrow['neg_log_p']} |\n")
-    f.write(f"| **Gene count** | {qrow.get('gene_count') or '—'} |\n")
-    if qrow.get("pmc_url"):
-        f.write(f"| **Source** | [{qrow['pmc_url'].rstrip('/').split('/')[-1]}]({qrow['pmc_url']}) |\n")
+    # Query comparison block
+    f.write('<div class="query-block">\n\n')
+    f.write(f'**Original query** ({len(qrow["phenotype"].split())} words):\n\n')
+    f.write(f'> _{qrow["phenotype"]}_\n\n')
+    f.write(f'**Enriched query** ({len(enriched_query.split())} words):\n\n')
+    f.write(f'> _{enriched_query}_\n\n')
+    f.write('</div>\n\n')
+
+    # Top 7 side-by-side
+    before_syms = [g["symbol"] for g in before["candidates"]]
+    after_syms = [g["symbol"] for g in after["candidates"]]
+    before_set = set(before_syms)
+    after_set = set(after_syms)
+
+    f.write("**Top 7 candidates** (★ = newly appearing after enrichment)\n\n")
+    f.write("| Rank | Before | After |\n|---:|---|---|\n")
+    for i in range(7):
+        b = before_syms[i] if i < len(before_syms) else ""
+        a = after_syms[i] if i < len(after_syms) else ""
+        a_star = f"**{a}** ★" if a and a not in before_set else f"`{a}`"
+        b_str = f"`{b}`"
+        f.write(f"| {i+1} | {b_str} | {a_star} |\n")
     f.write("\n")
 
-    f.write("**Original query (Long's table, verbatim)**\n\n")
-    f.write(f"> _{qrow['phenotype']}_\n\n")
-    f.write("Top 7: " + " · ".join(fmt_cands(before["candidates"])) + "\n\n")
-
-    f.write("**Enriched query (drug-mechanism context added)**\n\n")
-    f.write(f"> _{enriched_query}_\n\n")
-    f.write("Top 7: " + " · ".join(fmt_cands(after["candidates"])) + "\n\n")
-
-    # Show the diff
-    before_set = {c["symbol"] for c in before["candidates"]}
-    after_set = {c["symbol"] for c in after["candidates"]}
+    # Risers — each as its own block
     rose = [c for c in after["candidates"] if c["symbol"] not in before_set]
-    fell = [c for c in before["candidates"] if c["symbol"] not in after_set]
-
     if rose:
-        f.write(f"**Newly entering top-7** after enrichment:\n\n")
-        f.write("| Gene | ev (after) | n_bullets | Biology |\n|---|---:|---:|---|\n")
+        f.write("**Newly entering top 7**\n\n")
+        f.write('<div class="rise-list">\n\n')
         for g in rose:
             summary = get_summary(g["fbgn"])
-            f.write(f"| `{g['symbol']}` | {g['evidence']:.2f} | {g['n_bullets']} | {summary} |\n")
-        f.write("\n")
+            f.write(f'<div class="gene-entry">\n')
+            f.write(f'<div class="gene-head"><strong>{g["symbol"]}</strong> '
+                    f'<code>({g["fbgn"]})</code> — ev = {g["evidence"]:.2f}, '
+                    f'{g["n_bullets"]} bullets</div>\n')
+            f.write(f'<div class="gene-bio">{summary}</div>\n')
+            f.write(f'</div>\n\n')
+        f.write('</div>\n\n')
 
+    # Fallers — just a list of names + bullet count, no bio
+    fell = [c for c in before["candidates"] if c["symbol"] not in after_set]
     if fell:
-        f.write(f"**Dropping out of top-7** after enrichment:\n\n")
-        f.write("| Gene | n_bullets | Why likely off-target |\n|---|---:|---|\n")
-        for g in fell:
-            summary = get_summary(g["fbgn"])
-            f.write(f"| `{g['symbol']}` | {g['n_bullets']} | {summary[:160]}... |\n")
-        f.write("\n")
+        names = ", ".join(f"`{g['symbol']}`" for g in fell)
+        f.write(f"**Dropping out**: {names}\n\n")
 
-    f.write("---\n\n")
-
-
-def write_intro(f):
-    f.write("# Drug-mechanism-enriched QTL candidate ranking — before/after demo\n\n")
-    f.write("**Author:** Stephen Yu (Long Lab, UCI)\n\n")
-    f.write("---\n\n")
-    f.write("## Why this exists\n\n")
-    f.write("You correctly noted (5/19) that the original phenotype strings I parsed verbatim from your table (e.g. *\"Larval survival (~90% baseline mortality)\"*) were too generic — they pointed the embedding at \"any gene that affects larval viability\" rather than at \"genes protective against zinc toxicity specifically\". The atlas itself contains plenty of metal-detox / xenobiotic-detox / DNA-repair content; the query string just wasn't activating it.\n\n")
-    f.write("This document shows the before/after for four representative QTLs (one per drug class), with the **drug-mechanism description appended to the query string**. The atlas database, gene embeddings, and ranking algorithm are unchanged — only the query text is enriched.\n\n")
-    f.write("## Enriched query design\n\n")
-    f.write("For zinc and malathion I used your literal wording from the email; for the chemotherapy and caffeine cases I constructed parallel mechanism phrasing from canonical pharmacology (DHFR inhibition / folate antagonism for methotrexate, methylxanthine xenobiotic / Cyp450 detox for caffeine, etc.). The full enriched query for each drug is shown in each section below.\n\n")
-    f.write("## What changes, what doesn't\n\n")
-    f.write("Across all 24 QTLs, the per-drug roll-up shows the enriched query is **least disruptive for already-clean signals** (caffeine, gemcitabine) and **most disruptive for the QTLs where you noticed the problem** (methotrexate replaces 9 of its 28 top-7 slots, malathion replaces 7 of its 14). That's empirical evidence the critique was correct and localized to the QTLs whose phenotypes most needed pharmacological context.\n\n")
-    f.write("---\n\n")
-
-
-def write_outro(f):
-    f.write("## Summary across all 24 QTLs (not just the 4 demos)\n\n")
-    f.write("| Drug | QTLs | Top-7 slots stable | New entries | Dropped |\n|---|---:|---:|---:|---:|\n")
-    f.write("| Caffeine | 7 | 37/49 | 12 | 12 |\n")
-    f.write("| Carboplatin | 2 | 11/14 | 3 | 3 |\n")
-    f.write("| Gemcitabine | 2 | 12/14 | 2 | 2 |\n")
-    f.write("| **Malathion** | 2 | **7/14** | **7** | **7** |\n")
-    f.write("| **Methotrexate** | 4 | **12/28** | **9** | **9** |\n")
-    f.write("| Zinc | 7 | 37/49 | 12 | 12 |\n\n")
-    f.write("The two drugs you specifically flagged (malathion and zinc — and the chemo agents by extension) have the largest before/after deltas. That's the expected pattern if the enrichment is correcting the right problem.\n\n")
-    f.write("Reproducibility:\n\n")
-    f.write("```bash\n")
-    f.write("python src/test_enriched_phenotypes.py     # full 24-QTL diff\n")
-    f.write("python src/build_enriched_demo.py          # regenerate this report\n")
-    f.write("```\n\n")
-    f.write("Source: https://github.com/sgaofen/fly-distill\n")
+    f.write('</div>\n\n')
 
 
 def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with open(OUT, "w") as f:
-        write_intro(f)
-        for qtl_id, reason in DEMO_QTLS:
-            print(f"  ranking {qtl_id} (before + after)...", flush=True)
-            write_qtl_section(f, qtl_id, reason)
-        write_outro(f)
+        f.write("# QTL Candidate Ranking — Before/After Enriched Query\n\n")
+        f.write("Demo on 4 representative QTLs. Atlas, embeddings, and ranking algorithm are unchanged — only the query text is enriched with the drug mechanism.\n\n")
+        f.write("---\n\n")
+        for qtl_id in DEMO_QTLS:
+            print(f"  ranking {qtl_id}...", flush=True)
+            write_qtl_section(f, qtl_id)
     n = OUT.stat().st_size
     print(f"\nWrote {OUT} ({n:,} bytes)")
 
