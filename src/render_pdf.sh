@@ -145,6 +145,23 @@ table { page-break-inside: avoid; }
   color: #1f2937;
   line-height: 1.4;
 }
+
+/* curation status colors */
+.curation-list {
+  margin: 0.4em 0;
+}
+.gene-keep, .gene-maybe, .gene-discard {
+  margin: 0.5em 0;
+  padding: 0.55em 0.8em;
+  border-radius: 0 4px 4px 0;
+  page-break-inside: avoid;
+}
+.gene-keep    { background: #f0fdf4; border-left: 4px solid #16a34a; }   /* green */
+.gene-keep .gene-head strong { color: #15803d; }
+.gene-maybe   { background: #fffbeb; border-left: 4px solid #ca8a04; }   /* amber */
+.gene-maybe .gene-head strong { color: #92400e; }
+.gene-discard { background: #fafafa; border-left: 4px solid #9ca3af; }   /* grey */
+.gene-discard .gene-head strong { color: #4b5563; }
 EOF
 
 echo "▸ pandoc → HTML"
