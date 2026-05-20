@@ -1,13 +1,21 @@
-# Curated QTL candidate gene lists — 4 representative cases
+# Curated QTL candidate genes — 4 drug classes
 
-**Author:** Stephen Yu (Long Lab, UCI) · v1.4 atlas
-**Method:** For each QTL, ran 4 query variants (verbatim / keyword / mechanism / mechanism+families) against the same atlas. Took the **union** of top-7 candidates across all variants. Then manually filtered to keep genes biologically consistent with the drug's mechanism, with one-sentence justification for each decision.
+## What's in this report
 
-Categories:
+Four QTLs (one per drug class) each get one section:
 
-- **★ KEEP** — biologically plausible candidate for *this drug's* mechanism
-- **△ MAYBE** — semantic match but indirect; would need experimental validation to triage further
-- **✗ DISCARD** — algorithm surfaced for surface-level reasons but biology says no
+1. **QTL header** — chromosome region, gene count, source paper, drug-mechanism background in plain language.
+2. **Union of candidates** — for each QTL, ran four query variants against the atlas (verbatim phenotype string / keyword bag / mechanism description / mechanism + gene-family hints). Took the union of the top-7 results across all four variants. This is the algorithm's raw candidate set, typically 10–13 unique genes.
+3. **Curation tag** — each candidate is then tagged by hand using FlyBase biology against the drug's mechanism of action:
+    - **★ KEEP** — gene's known function is directly consistent with conferring protection against this drug.
+    - **△ MAYBE** — semantic match plus plausible biology, but the link is indirect; would need wet-lab validation to triage further.
+    - **✗ DISCARD** — algorithm surfaced for generic / surface-level reasons (lethality semantics, chromatin remodeling, etc.) but the gene's actual function has no specific link to the drug.
+4. **One-sentence justification** for each KEEP and MAYBE; pooled justification for the DISCARDs.
+5. **Curated shortlist** at the end of each section — the ★ candidates only.
+
+Each section is color-coded in the PDF: green panels = KEEP, amber = MAYBE, grey = DISCARD.
+
+Final summary table at the bottom reports KEEP / MAYBE / DISCARD counts across the 4 QTLs.
 
 ---
 
@@ -233,7 +241,3 @@ Categories:
 | zinc_D | 2 | 4 | 5 | MTF-1 (textbook gene) + foi (zinc transporter) — both real candidates worth wet-lab validation |
 
 **Across the 4 strongest QTLs:** algorithm + manual curation yields **13 high-confidence (★) candidates** across the 4 drugs. The MAYBEs (13 total) are real follow-up territory; the DISCARDs (19) are noise the algorithm couldn't filter on its own but biology can.
-
----
-
-*This report is the result of running the algorithm and then applying a biology filter. The atlas provides the candidate set; the filter is human (or in this case, model-with-biology-knowledge) judgment. For QTLs whose interval contains a textbook protective gene (malathion_A, methotrexate_A, caffeine_D, zinc_D), this workflow reduces 50–350 genes to 2–6 candidates with explicit reasoning.*
