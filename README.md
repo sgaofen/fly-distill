@@ -129,6 +129,12 @@ intervals, paper/ortholog/disease for structured lookups).
 Long-lab-style: you have a QTL peak from BSA/XQTL/RIL mapping, you want to
 narrow down to a small set of candidate genes for the phenotype you assayed.
 
+> **See [docs/query_prompt_guide.md](docs/query_prompt_guide.md)** for how to
+> write effective semantic-search queries. The short version: a 12–15 token
+> keyword bag (compound + class + target + detox families + damage type)
+> outperforms verbatim phenotype strings and matches paper-decomposed
+> multi-axis approaches at ~87 % anchor recovery across 4 tested QTLs.
+
 ```bash
 # 1. Get all genes in your peak interval
 flyatlas region 2L:5000000-6000000 --json > peak_genes.json    # 122 genes
