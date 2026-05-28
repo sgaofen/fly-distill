@@ -149,7 +149,20 @@ flyatlas ask "pupa height pupariation behavior climbing larval-pupal transition"
 
 # 3. Drill in on a candidate
 flyatlas gene obst-E
+
+# 4. Before you conclude: pull the full local FlyBase record + paper PMIDs
+python3 tools/deep_dossier.py obst-E
+#   alleles (point mutations / disease variants), raw genotype→phenotype records,
+#   genetic + physical interactions (none of which the distilled atlas carries),
+#   and the full publication list with PMIDs for targeted full-text lookup.
 ```
+
+> **See [docs/analysis_sop.md](docs/analysis_sop.md)** for the full three-layer
+> SOP: embedding/region is a *candidate net*, the atlas *triages*, and the raw
+> record (`deep_dossier`) + primary papers *decide*. Calibrated on 4 anchored
+> QTLs (all anchors confirmed; deep verification flipped several atlas-only
+> verdicts in both directions). The rule: the atlas triages, the raw record
+> decides.
 
 Or batch many peaks at once:
 
