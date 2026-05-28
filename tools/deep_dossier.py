@@ -8,6 +8,7 @@ online. Full article text still needs the PMIDs listed at the end.
 
 Usage:
   python3 deep_dossier.py Svip
+  python3 deep_dossier.py ebony          # full common names resolve too
   python3 deep_dossier.py FBgn0052039
   python3 deep_dossier.py Svip --json
 """
@@ -32,8 +33,8 @@ F = {
     "best_sum": BULK / "genes" / "best_gene_summary_fb_2026_01.tsv.gz",
 }
 FBRF = re.compile(r"FBrf\d{7}")
-FBDV = re.compile(r"FBdv:\d+")
-PMID = None
+FBDV = re.compile(r"FBdv:(\d+)|(?<![:\d])(\d{8})(?![\d])")  # FBdv:NNN or a bare 8-digit stage id
+MITAB_SYM = re.compile(r"flybase:([^|()]+)\(gene name\)")
 
 
 def rows(path):
@@ -53,57 +54,93 @@ def resolve_fbgn(token: str) -> tuple[str, str]:
     r = db.execute("SELECT fbgn, symbol FROM genes WHERE symbol=? COLLATE NOCASE", (token,)).fetchone()
     if r:
         return r[0], r[1]
-    r = db.execute("SELECT g.fbgn, g.symbol FROM genes g JOIN synonyms s ON s.fbgn=g.fbgn WHERE s.synonym=? COLLATE NOCASE", (token,)).fetchone()
+    r = db.execute(
+        "SELECT g.fbgn, g.symbol FROM genes g JOIN synonyms s ON s.fbgn=g.fbgn "
+        "WHERE s.synonym=? COLLATE NOCASE", (token,)).fetchone()
     if r:
         return r[0], r[1]
-    sys.exit(f"Could not resolve '{token}' to an FBgn via atlas.db")
+    # fallback: full common names (e.g. "ebony") open the best_gene_summary as "<name> (<symbol>) ..."
+    pat = re.compile(r"^\s*" + re.escape(token) + r"\s*\(", re.I)
+    for c in rows(F["best_sum"]):
+        if len(c) > 3 and pat.match(c[3]):
+            sys.stderr.write(f"[resolved '{token}' -> {c[1]} ({c[0]}) via gene-name summary]\n")
+            return c[0], c[1]
+    sys.exit(f"Could not resolve '{token}' to an FBgn (try the gene symbol or FBgn id).")
+
+
+def _stage(cells):
+    for x in cells:
+        m = FBDV.search(x)
+        if m:
+            return m.group(1) or m.group(2)
+    return ""
+
+
+def _allele_desc(cells):
+    """Description is a long free-text column (col ~18), NOT the last cell (stock count)."""
+    cands = [x for x in cells[4:] if x and " " in x and len(x) > 15
+             and not x.startswith(("FB", "GO:")) and not x.isdigit()]
+    return max(cands, key=len) if cands else ""
+
+
+def _mitab_partner(cell):
+    m = MITAB_SYM.search(cell or "")
+    return m.group(1) if m else ""
 
 
 def collect(fbgn: str, symbol: str) -> dict:
-    # 1. alleles for this gene (desc file: col1=FBal, col3=FBgn, last nonempty=description)
-    alleles = []
+    # gene's complete FBal set (precise key for everything allele-based)
     fbals = set()
+    alleles = []
     for c in rows(F["allele_desc"]):
         if len(c) > 3 and c[3] == fbgn:
-            fbal = c[1]
-            fbals.add(fbal)
-            desc = next((x for x in reversed(c) if x and not x.startswith(("FB", "GO:")) and x != "0"), "")
-            alleles.append({"allele": c[0], "fbal": fbal, "class": c[4] if len(c) > 4 else "", "desc": desc})
-    # also map any FBal -> this gene (catches alleles only in fbal2fbgn)
+            fbals.add(c[1])
+            alleles.append({"allele": c[0], "fbal": c[1], "class": c[4] if len(c) > 4 else "",
+                            "desc": _allele_desc(c)})
     for c in rows(F["fbal2fbgn"]):
         if len(c) > 2 and c[2] == fbgn:
             fbals.add(c[0])
 
-    # 2. genotype -> phenotype rows whose allele set intersects this gene's FBals
+    # genotype -> phenotype: match ONLY by FBal-set intersection (no symbol substring — avoids
+    # the 'e' explosion and driver/promoter contamination like Tk.PS / Cyp6g1.HR)
     gp = []
     for c in rows(F["geno_pheno"]):
         if len(c) < 3:
             continue
-        line_fbals = set(c[1].split()) if len(c) > 1 else set()
-        if not (line_fbals & fbals) and symbol not in c[0]:
+        if not (set(c[1].split()) & fbals):
             continue
-        stage = next((x for x in c if FBDV.search(x)), "")
         rf = next((m.group() for x in c for m in [FBRF.search(x)] if m), "")
-        gp.append({"genotype": c[0], "phenotype": c[2], "stage": stage.replace("FBdv:", ""), "fbrf": rf})
+        gp.append({"genotype": c[0], "phenotype": c[2], "stage": _stage(c), "fbrf": rf})
 
-    # 3. genetic interactions (col1=FBgn or interactor col3 contains FBgn)
+    # genetic interactions — split BOTH sides on '|' (gene clusters appear on the start side too)
     gint = []
     for c in rows(F["gen_int"]):
-        if len(c) > 5 and (c[1] == fbgn or fbgn in c[3]):
+        if len(c) < 6:
+            continue
+        if fbgn in c[1].split("|") or fbgn in c[3].split("|"):
             gint.append({"gene": c[0], "interactor": c[2], "type": c[4], "fbrf": c[5]})
 
-    # 4. snapshot + best summary
+    # physical interactions (mitab) — previously defined but never parsed
+    pint = []
+    tag = "flybase:" + fbgn
+    for c in rows(F["phys_int"]):
+        if len(c) < 7:
+            continue
+        if tag in c[0] or tag in c[1]:
+            partner = _mitab_partner(c[5]) if tag in c[0] else _mitab_partner(c[4])
+            method = (c[6].split('(')[-1].rstrip(')') if len(c) > 6 else "")
+            if partner and partner != symbol:
+                pint.append({"partner": partner, "method": method})
+    seen = set(); pint = [p for p in pint if not (p["partner"] in seen or seen.add(p["partner"]))]
+
     snap = best = ""
     for c in rows(F["snapshot"]):
         if c and c[0] == fbgn:
-            snap = c[-1]
-            break
+            snap = c[-1]; break
     for c in rows(F["best_sum"]):
         if c and c[0] == fbgn:
-            best = c[-1]
-            break
+            best = c[-1]; break
 
-    # 5. publications for this gene, mapped to PMID/PMCID/DOI
     fbrfs = []
     for c in rows(F["entity_pub"]):
         if c and c[0] == fbgn and len(c) > 2 and c[2].startswith("FBrf"):
@@ -116,7 +153,6 @@ def collect(fbgn: str, symbol: str) -> dict:
             refmap[c[0]] = {"pmid": c[1] if len(c) > 1 else "", "pmcid": c[2] if len(c) > 2 else "",
                             "doi": c[3] if len(c) > 3 else "", "cite": c[5] if len(c) > 5 else ""}
 
-    # 6. atlas coverage (from bundle's own provenance: it records totals, not the exact 19 used)
     atlas_bullets = n_total = n_used = 0
     ab = GENES / f"{fbgn}.json"
     if ab.exists():
@@ -125,15 +161,15 @@ def collect(fbgn: str, symbol: str) -> dict:
         src = bj.get("source", {})
         n_total = src.get("n_pubs_total") or 0
         n_used = src.get("n_abstracts_used") or 0
-    # publications with a local PMID/PMCID (the ones full-text is reachable for), newest first
-    with_id = [{"fbrf": rf, **refmap[rf]} for rf in fbrfs if refmap.get(rf) and (refmap[rf].get("pmid") or refmap[rf].get("pmcid"))]
+    with_id = [{"fbrf": rf, **refmap[rf]} for rf in fbrfs
+               if refmap.get(rf) and (refmap[rf].get("pmid") or refmap[rf].get("pmcid"))]
     with_id.sort(key=lambda p: p["fbrf"], reverse=True)
-    n_no_id = len(fbrfs) - len(with_id)
 
     return {"fbgn": fbgn, "symbol": symbol, "snapshot": snap, "best_summary": best,
             "alleles": alleles, "genotype_phenotype": gp, "genetic_interactions": gint,
-            "n_pubs": len(fbrfs), "atlas_bullets": atlas_bullets, "atlas_n_total": n_total, "atlas_n_used": n_used,
-            "pubs_with_id": with_id, "n_pubs_no_id": n_no_id}
+            "physical_interactions": pint, "n_pubs": len(fbrfs), "atlas_bullets": atlas_bullets,
+            "atlas_n_total": n_total, "atlas_n_used": n_used,
+            "pubs_with_id": with_id, "n_pubs_no_id": len(fbrfs) - len(with_id)}
 
 
 def render(d: dict):
@@ -149,7 +185,8 @@ def render(d: dict):
         print(f"## Best gene summary\n{d['best_summary'][:1200]}\n")
     print(f"## Alleles ({len(d['alleles'])})")
     for a in d["alleles"]:
-        print(f"- **{a['allele']}** ({a['fbal']}){' — '+a['class'] if a['class'] else ''}: {a['desc'][:240]}")
+        cls = f" — {a['class']}" if a["class"] else ""
+        print(f"- **{a['allele']}** ({a['fbal']}){cls}: {a['desc'][:240] or '(no description)'}")
     print(f"\n## Genotype → phenotype records ({len(d['genotype_phenotype'])})  *(atlas compressed these into bullets)*")
     for g in d["genotype_phenotype"]:
         st = f" [{g['stage']}]" if g["stage"] else ""
@@ -157,6 +194,9 @@ def render(d: dict):
     print(f"\n## Genetic interactions ({len(d['genetic_interactions'])})  *(absent from atlas)*")
     for gi in d["genetic_interactions"]:
         print(f"- {gi['gene']} — {gi['type']} — {gi['interactor']}  <{gi['fbrf']}>")
+    print(f"\n## Physical interactions ({len(d['physical_interactions'])})  *(absent from atlas)*")
+    for p in d["physical_interactions"]:
+        print(f"- {p['partner']}" + (f"  ({p['method']})" if p["method"] else ""))
     print(f"\n## Publications with retrievable full text ({len(d['pubs_with_id'])} have PMID/PMCID; "
           f"{d['n_pubs_no_id']} older refs lack one) — newest first")
     for p in d["pubs_with_id"]:
