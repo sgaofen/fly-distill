@@ -23,6 +23,10 @@ WANTED = {
         "physical_interactions_mitab",        # gene-gene physical interaction (MITAB format)
         "gene_groups_HGNC",                   # fly gene group → HGNC family (cross-species)
         "fbgn_annotation_ID",                 # FBgn ↔ CG ↔ symbol mapping
+        "gene_rpkm_report",                   # per-gene RNA-seq RPKM across tissues + dev stages (where/when expressed)
+    ],
+    "synonyms": [
+        "fb_synonym",                         # full symbol/name/synonym table (robust name → FBgn resolution)
     ],
     "alleles": [
         "genotype_phenotype_data",            # MAIN: per-allele phenotype annotations (replaces phenotypes_sub scrape)

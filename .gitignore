@@ -5,6 +5,7 @@
 
 # Bulk databases (regeneratable via download scripts)
 data/flybase_bulk/
+data/gene_cache/
 data/mgi/
 data/hpo/
 data/omim/

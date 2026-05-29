@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BULK = ROOT / "data" / "flybase_bulk"
 DB = ROOT / "tools" / "atlas.db"
 GENES = ROOT / "output" / "genes"
+CACHE = ROOT / "data" / "gene_cache"   # pre-built per-gene JSON (build_gene_cache.py); fast path
 
 F = {
     "geno_pheno": BULK / "alleles" / "genotype_phenotype_data_fb_2026_01.tsv.gz",
@@ -33,6 +34,7 @@ F = {
     "best_sum": BULK / "genes" / "best_gene_summary_fb_2026_01.tsv.gz",
 }
 FBRF = re.compile(r"FBrf\d{7}")
+FBAL = re.compile(r"FBal\d+")  # genotypes use space AND '/' (homozygotes) — extract by regex
 FBDV = re.compile(r"FBdv:(\d+)|(?<![:\d])(\d{8})(?![\d])")  # FBdv:NNN or a bare 8-digit stage id
 MITAB_SYM = re.compile(r"flybase:([^|()]+)\(gene name\)")
 
@@ -107,7 +109,7 @@ def collect(fbgn: str, symbol: str) -> dict:
     for c in rows(F["geno_pheno"]):
         if len(c) < 3:
             continue
-        if not (set(c[1].split()) & fbals):
+        if not (set(FBAL.findall(c[1])) & fbals):
             continue
         rf = next((m.group() for x in c for m in [FBRF.search(x)] if m), "")
         gp.append({"genotype": c[0], "phenotype": c[2], "stage": _stage(c), "fbrf": rf})
@@ -205,12 +207,71 @@ def render(d: dict):
         print(f"- {p.get('cite') or p['fbrf']}  [{ids}]")
 
 
+def _atlas_gap(fbgn):
+    ab = GENES / f"{fbgn}.json"
+    if not ab.exists():
+        return None
+    bj = json.loads(ab.read_text()); src = bj.get("source", {})
+    return {"bullets": len(bj.get("bullets", [])),
+            "n_used": src.get("n_abstracts_used") or 0, "n_total": src.get("n_pubs_total") or 0}
+
+
+def render_cache(d):
+    """Render from a pre-built cache doc (build_gene_cache.py) — adds name/synonyms,
+    expression, GO, and cross-species layers the gzip-scan path doesn't carry."""
+    print(f"# Deep dossier — {d['symbol']} ({d['fbgn']})  [cached; local FlyBase bulk, no internet]\n")
+    if d.get("fullname"):
+        print(f"**{d['fullname']}**" + (f"  ·  syn: {', '.join(d['synonyms'][:8])}" if d.get("synonyms") else "") + "\n")
+    g = _atlas_gap(d["fbgn"])
+    if g:
+        gap = (g["n_total"] or d["n_pubs"]) - g["n_used"]
+        print(f"**Atlas coverage gap:** distilled {g['bullets']} bullets from {g['n_used']}/{g['n_total'] or d['n_pubs']} pubs → ~{gap} not distilled.\n")
+    if d.get("snapshot"):
+        print(f"## FlyBase gene snapshot\n{d['snapshot']}\n")
+    elif d.get("best_summary"):
+        print(f"## Best gene summary\n{d['best_summary'][:1000]}\n")
+    print(f"## Cross-species\n- human: " + (", ".join(f"{o['human']}(DIOPT {o['diopt']}){' — '+o['disease'] if o.get('disease') else ''}" for o in d.get("human_orthologs", [])[:6]) or "—"))
+    print(f"- mouse: " + (", ".join(f"{o['mouse']}(DIOPT {o['diopt']})" for o in d.get("mouse_orthologs", [])[:6]) or "—") + "\n")
+    print(f"## Alleles ({len(d['alleles'])})")
+    for a in d["alleles"]:
+        cls = f" — {a['class']}" if a.get("class") else ""
+        print(f"- **{a['allele']}** ({a['fbal']}){cls}: {a['desc'][:240] or '(no description)'}")
+    print(f"\n## Genotype → phenotype records ({len(d['genotype_phenotype'])})")
+    for r in d["genotype_phenotype"]:
+        st = f" [{r['stage']}]" if r.get("stage") else ""
+        print(f"- {r['genotype']} → **{r['phenotype']}**{st}  <{r.get('fbrf','')}>")
+    print(f"\n## Genetic interactions ({len(d['genetic_interactions'])})")
+    for gi in d["genetic_interactions"]:
+        print(f"- {gi['gene']} — {gi['type']} — {gi['interactor']}  <{gi['fbrf']}>")
+    print(f"\n## Physical interactions ({len(d['physical_interactions'])})")
+    for p in d["physical_interactions"]:
+        print(f"- {p['partner']}" + (f"  ({p['method']})" if p.get("method") else ""))
+    print(f"\n## GO ({len(d['go'])}) — experimental (non-IEA) first")
+    for go in sorted(d["go"], key=lambda x: x["evidence"] == "IEA"):
+        print(f"- [{go['aspect']}] {go['qualifier']} {go['go_id']}  ({go['evidence']}; {go['ref']})")
+    print(f"\n## Top expression (RPKM, tissue/stage)")
+    print("  " + ", ".join(f"{x['sample']}={x['rpkm']}" for x in d.get("expression_top", [])[:12]))
+    print(f"\n## Publications with PMID ({len(d['pubs'])} of {d['n_pubs']}) — newest first")
+    for p in d["pubs"]:
+        ids = " ".join(x for x in [f"PMID:{p['pmid']}" if p.get("pmid") else "", p.get("pmcid", "")] if x)
+        print(f"- {p.get('cite') or p['fbrf']}  [{ids}]")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("gene")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--no-cache", action="store_true", help="force live gzip scan instead of the prebuilt cache")
     a = ap.parse_args()
     fbgn, symbol = resolve_fbgn(a.gene)
+    cf = CACHE / f"{fbgn}.json"
+    if cf.exists() and not a.no_cache:
+        d = json.loads(cf.read_text())
+        if a.json:
+            print(json.dumps(d, ensure_ascii=False, indent=1))
+        else:
+            render_cache(d)
+        return
     d = collect(fbgn, symbol)
     if a.json:
         print(json.dumps(d, ensure_ascii=False, indent=1))
